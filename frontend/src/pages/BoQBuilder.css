@@ -1,0 +1,53 @@
+.boq-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+input {
+  padding: 6px;
+  margin: 4px;
+}
+
+button {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+h2, h3 {
+  margin-top: 20px;
+}
+
+.boq-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.boq-table th,
+.boq-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.boq-table th {
+  background-color: #1976d2;
+  color: white;
+}
+
+.main-row {
+  background-color: #f9f9f9;
+}
+
+.sub-row {
+  background-color: #eaf2ff;
+}
+
+.sub-form-row {
+  background-color: #fff8e1;
+}

@@ -2,6 +2,8 @@
 import React, { useState } from "react"; // React is used for building UI components, useState manages state
 import { v4 as uuidv4 } from "uuid"; // uuid is used to generate unique IDs for categories, subcategories, and items
 import "./BoQBuilder.css"; // Importing the CSS file for styling the component
+import axios from "axios"; // Axios is used for making HTTP requests
+
 
 // Main functional component for the BoQ (Bill of Quantities) Builder
 function BoQBuilder() {
@@ -228,6 +230,15 @@ function BoQBuilder() {
     );
   };
 
+  const saveBoQToServer = async () => {
+    try {
+      const response = await axios.post("http://localhost:8000/save-boq/", categories);
+      alert("Data saved successfully!");
+    } catch (error) {
+      console.error("Error saving BoQ:", error);
+      alert("Error saving data!");
+    }
+  };
   // JSX to render the UI
   return (
     <div className="boq-container">

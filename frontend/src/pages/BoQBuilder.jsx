@@ -3,7 +3,21 @@ import React, { useState } from "react"; // React is used for building UI compon
 import { v4 as uuidv4 } from "uuid"; // uuid is used to generate unique IDs for categories, subcategories, and items
 import "./BoQBuilder.css"; // Importing the CSS file for styling the component
 import axios from "axios"; // Axios is used for making HTTP requests
+import { useEffect } from "react";
 
+useEffect(() => {
+  fetchBoQData();
+}, []);
+
+const fetchBoQData = async () => {
+  try {
+    const response = await fetch("http://localhost:8000/get-boq/");
+    const data = await response.json();
+    setCategories(data); // Populate state with fetched BoQ data
+  } catch (error) {
+    console.error("Error fetching BoQ:", error);
+  }
+};
 
 // Main functional component for the BoQ (Bill of Quantities) Builder
 function BoQBuilder() {

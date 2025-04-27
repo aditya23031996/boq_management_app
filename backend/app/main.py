@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import boq_router
+from app.routers import boq_router, user_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -18,3 +18,4 @@ app.add_middleware(
 )
 
 app.include_router(boq_router.router)
+app.include_router(user_router.router)

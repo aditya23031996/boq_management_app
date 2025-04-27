@@ -5,39 +5,38 @@ import "./BoQBuilder.css"; // Importing the CSS file for styling the component
 import axios from "axios"; // Axios is used for making HTTP requests
 import { useEffect } from "react";
 
-useEffect(() => {
-  fetchBoQData();
-}, []);
-
-const fetchBoQData = async () => {
-  try {
-    const response = await fetch("http://localhost:8000/get-boq/");
-    const data = await response.json();
-    setCategories(data); // Populate state with fetched BoQ data
-  } catch (error) {
-    console.error("Error fetching BoQ:", error);
-  }
-};
 
 // Main functional component for the BoQ (Bill of Quantities) Builder
 function BoQBuilder() {
-  // State to manage the list of categories
   const [categories, setCategories] = useState([]);
-  // State to manage the input for a new category name
   const [newCategoryName, setNewCategoryName] = useState("");
 
-  // Function to add a new category to the list
+  useEffect(() => {
+    fetchBoQData();
+  }, []);
+
+  const fetchBoQData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/get-boq/");
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching BoQ:", error);
+    }
+  };
+
   const addCategory = () => {
-    if (!newCategoryName.trim()) return; // Prevent adding a category with an empty name
+    if (!newCategoryName.trim()) return;
     setCategories([
-      ...categories, // Retain the existing categories
+      ...categories,
       {
-        categoryId: uuidv4(), // Generate a unique ID for the new category
-        categoryName: newCategoryName.trim(), // Use the trimmed input as the category name
-        subCategories: [] // Initialize with an empty list of subcategories
-      }
+        categoryId: uuidv4(),
+        categoryName: newCategoryName.trim(),
+        projectId: "",
+        subCategories: []
+      },
     ]);
-    setNewCategoryName(""); // Clear the input field after adding the category
+    setNewCategoryName("");
   };
 
   // Function to add a new subcategory to a specific category
@@ -246,7 +245,7 @@ function BoQBuilder() {
 
   const saveBoQToServer = async () => {
     try {
-      const response = await axios.post("http://localhost:8000/save-boq/", categories);
+      const response = await axios.post("http://127.0.0.1:8000/save-boq/", categories);
       alert("Data saved successfully!");
     } catch (error) {
       console.error("Error saving BoQ:", error);
@@ -256,7 +255,7 @@ function BoQBuilder() {
   // JSX to render the UI
   return (
     <div className="boq-container">
-      <h2>BoQ Builder with Sub-Categories</h2>
+      <h2>BoQ Builder</h2>
 
       {/* Input field for adding a new category */}
       <input
@@ -265,6 +264,7 @@ function BoQBuilder() {
         onChange={(e) => setNewCategoryName(e.target.value)}
       />
       <button onClick={addCategory}>Add Category</button>
+      <button onClick={saveBoQToServer}>Save BoQ</button>
 
       {/* Loop through each category and render its subcategories */}
       {categories.map(cat => (

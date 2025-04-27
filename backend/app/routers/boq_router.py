@@ -1,63 +1,34 @@
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException
+from typing import List
+from ..schemas.boq_schema import Category
+from ..services.boq_services import save_boq_data, get_boq_data
 
-# Allow CORS so your React frontend can call this API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Or ["http://localhost:3000"] for stricter security
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+router = APIRouter()
 
-@app.get("/get-boq/")
-def get_boq():
+@router.post("/save-boq/")
+async def save_boq(request: Request):
     try:
-        conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="yourpassword",
-            database="boq_db"
-        )
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("SELECT * FROM categories")
-        categories = cursor.fetchall()
-
-        boq = []
-        for cat in categories:
-            cursor.execute("SELECT * FROM subcategories WHERE category_id = %s", (cat['id'],))
-            subcategories = cursor.fetchall()
-
-            subcat_list = []
-            for sub in subcategories:
-                cursor.execute("SELECT * FROM items WHERE sub_category_id = %s", (sub['id'],))
-                items = cursor.fetchall()
-
-                item_list = []
-                for item in items:
-                    cursor.execute("SELECT * FROM breakups WHERE item_id = %s AND sub_item_id IS NULL", (item['id'],))
-                    breakups = cursor.fetchall()
-
-                    cursor.execute("SELECT * FROM sub_items WHERE parent_item_id = %s", (item['id'],))
-                    sub_items = cursor.fetchall()
-
-                    sub_item_list = []
-                    for sub_item in sub_items:
-                        cursor.execute("SELECT * FROM breakups WHERE sub_item_id = %s", (sub_item['id'],))
-                        sub_breakups = cursor.fetchall()
-                        sub_item['breakups'] = sub_breakups
-                        sub_item_list.append(sub_item)
-
-                    item['breakups'] = breakups
-                    item['subItems'] = sub_item_list
-                    item_list.append(item)
-
-                sub['items'] = item_list
-                subcat_list.append(sub)
-
-            cat['subCategories'] = subcat_list
-            boq.append(cat)
-
-        return boq
+        body = await request.json()
+        print("🔥 Incoming JSON:\n", body)
+        from ..schemas.boq_schema import Category
+        categories = [Category(**c) for c in body]  # This will show exact schema issues
+        return save_boq_data(categories)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=422, detail=str(e))
+
+@router.get("/get-boq/")
+def get_boq():
+    return get_boq_data()
+
+@router.get("/ping-db")
+def ping_database():
+    try:
+        from ..services.boq_services import get_db
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        return {"status": "success", "message": "Database connected!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

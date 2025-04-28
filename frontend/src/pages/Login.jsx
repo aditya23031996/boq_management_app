@@ -2,6 +2,7 @@ import PageLayout from "../components/PageLayout";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { loginUser } from "../services/auth";
+import { toast } from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,9 +15,11 @@ export default function Login() {
 
     try {
       loginUser(email, password);
-      navigate("/builder");
+      toast.success('Login successful! 🎉');
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Login failed! ❌');
     }
   };
 

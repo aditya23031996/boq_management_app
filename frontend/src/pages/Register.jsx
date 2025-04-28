@@ -2,6 +2,7 @@ import PageLayout from "../components/PageLayout";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { registerUser } from "../services/auth";
+import axios from "axios";
 
 export default function Register() {
   const navigate = useNavigate();

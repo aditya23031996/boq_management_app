@@ -16,8 +16,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import BoQBuilder from "./BoQBuilder";
-import PageLayout from "../components/PageLayout";
+import BoQBuilder from "../../Boq_Manager/Dashboard/Boq/BoQBuilder";
+import PageLayout from "../../../components/PageLayout";
 
 // Reusable Button
 const Button = ({ children, onClick, to }) => {

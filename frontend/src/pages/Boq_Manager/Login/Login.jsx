@@ -1,7 +1,7 @@
-import PageLayout from "../components/PageLayout";
+import PageLayout from "../../../components/PageLayout";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { loginUser } from "../services/auth";
+import { loginUser } from "../../../services/auth";
 import { toast } from 'react-hot-toast';
 
 export default function Login() {

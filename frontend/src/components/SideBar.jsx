@@ -1,5 +1,6 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+// Sidebar.jsx
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Folder,
@@ -7,7 +8,14 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from 'lucide-react';
+
+const navItems = [
+  { label: 'Home', to: '/dashboard', icon: <LayoutDashboard size={16} /> },
+  { label: 'Projects', to: '/projects', icon: <Folder size={16} /> },
+  { label: 'Bill of Quantities', to: '/reports', icon: <FileText size={16} /> },
+  { label: 'Settings', to: '/settings', icon: <Settings size={16} /> },
+];
 
 export default function Sidebar({ collapsed, toggleSidebar }) {
   const location = useLocation();
@@ -15,79 +23,47 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
 
   return (
     <aside
-      className={`bg-gradient-to-b from-[#154078] to-[#415a77] text-white fixed top-16 bottom-0 left-0 flex flex-col shadow-2xl transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64"
-      }`}
+      className={`fixed top-0 bottom-0 left-0 flex flex-col bg-gray-900 text-white shadow-lg transition-all duration-300 ${
+        collapsed ? 'w-16' : 'w-48'
+      } font-sans antialiased`}
     >
-      {/* Top Section */}
-      <div className="p-6 flex items-center justify-between border-b border-[#2c3e50]">
+      {/* Header */}
+      <div className="flex items-center justify-center p-3 border-b border-gray-700">
         {!collapsed && (
-          <span className="text-3xl font-extrabold tracking-wider">BoQ</span>
+          <span className="text-base font-normal tracking-normal">
+            Bill of Quantities Manager
+          </span>
         )}
-        <button
-          onClick={toggleSidebar}
-          className="p-2 hover:bg-[#2c3e50] rounded-full transition"
-        >
-          {collapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
-        </button>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-grow p-4 space-y-2">
-        <SidebarLink
-          to="/dashboard"
-          icon={<LayoutDashboard size={20} />}
-          active={isActive("/dashboard")}
-          collapsed={collapsed}
-        >
-          Dashboard
-        </SidebarLink>
-        <SidebarLink
-          to="/projects"
-          icon={<Folder size={20} />}
-          active={isActive("/projects")}
-          collapsed={collapsed}
-        >
-          Projects
-        </SidebarLink>
-        <SidebarLink
-          to="/boqs"
-          icon={<FileText size={20} />}
-          active={isActive("/boqs")}
-          collapsed={collapsed}
-        >
-          BoQs
-        </SidebarLink>
-        <SidebarLink
-          to="/settings"
-          icon={<Settings size={20} />}
-          active={isActive("/settings")}
-          collapsed={collapsed}
-        >
-          Settings
-        </SidebarLink>
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-2 space-y-2">
+        {navItems.map(({ label, to, icon }) => (
+          <Link
+            key={to}
+            to={to}
+            className={`flex items-center transition-colors duration-200 px-2 py-1 rounded-md hover:bg-gray-700 ${
+              collapsed ? 'justify-center' : 'gap-1'
+            } ${isActive(to) ? 'bg-gray-700 shadow-inner' : ''}`}
+          >
+            {icon}
+            {!collapsed && (
+              <span className="text-xs font-semibold">{label}</span>
+            )}
+          </Link>
+        ))}
       </nav>
 
-      {/* Footer Section (Optional) */}
-      <div className="p-4 border-t border-[#2c3e50] mt-auto">
-        {!collapsed && <span className="text-sm">Version 1.0.0</span>}
+      {/* Toggle Button at Bottom Center */}
+      <div className="p-3 flex justify-center">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 hover:bg-gray-700 rounded-full transition"
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
     </aside>
-  );
-}
-
-function SidebarLink({ to, icon, active, collapsed, children }) {
-  return (
-    <Link
-      to={to}
-      className={`flex items-center ${
-        collapsed ? "justify-center" : "gap-4"
-      } px-4 py-3 rounded-md transition-all duration-300 hover:bg-[#2c3e50] ${
-        active ? "bg-[#2c3e50] shadow-inner" : ""
-      }`}
-    >
-      {icon}
-      {!collapsed && <span className="font-semibold">{children}</span>}
-    </Link>
   );
 }

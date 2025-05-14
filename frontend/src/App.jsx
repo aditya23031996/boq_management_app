@@ -1,11 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Homepage from "./pages/Homepage";
-import BoQHomepage from "./pages/BoQManagerHomepage";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import BoQBuilder from "./pages/BoQBuilder";
+import Homepage from "./pages/Dheeradi_Website/Homepage/Homepage";
+import Login from "./pages/Boq_Manager/Login/Login";
+import Register from "./pages/Boq_Manager/Register/Register";
+import Dashboard from "./pages/Boq_Manager/Dashboard/Dashboard";
 
 function App() {
   return (
@@ -15,11 +13,9 @@ function App() {
       
       <Routes>
         <Route path="/" element={<Homepage />} />
-        <Route path="/boqmanager" element={<BoQHomepage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/builder" element={<BoQBuilder />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,21 +1,42 @@
 from fastapi import FastAPI
-from app.routers import boq_router, user_router
 from fastapi.middleware.cors import CORSMiddleware
+from .database.config import engine, Base
+from app.routers.boq_router import router as boq_router
+from app.routers.user_router import router as user_router
+from app.routers.project_router import router as project_router
 
+# Explicitly import all models so SQLAlchemy knows about them
+from app.models.project import Project
+from app.models.boq import BOQ
+from app.models.user import User
 
-app = FastAPI()
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
-@app.get("/")
-def root():
-    return {"message": "Backend is live"}
+app = FastAPI(
+    title="BOQ Management API",
+    description="API for managing Bill of Quantities",
+    version="1.0.0"
+)
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Or ["*"] for all
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(boq_router.router)
-app.include_router(user_router.router)
+# Include routers
+app.include_router(boq_router)
+app.include_router(user_router)
+app.include_router(project_router)
+
+@app.get("/")
+def root():
+    return {
+        "message": "BOQ Management API",
+        "version": "1.0.0",
+        "documentation": "/docs"
+    }

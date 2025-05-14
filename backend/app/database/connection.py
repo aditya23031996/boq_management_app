@@ -1,34 +1,34 @@
 # app/database/connection.py
+
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-load_dotenv()
-# Load environment variables from .env file
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
+from .config import SQLALCHEMY_DATABASE_URL
 
-DATABASE_URL = "mysql+pymysql://root:abcABC123%21%40%23@localhost/boq_management_db"
+# 1. Create the SQLAlchemy engine
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    echo=True,            # Enable SQL query logging
+    fast_executemany=True # Optimize bulk inserts
+)
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+# 2. Declare a Base for models to inherit from
 Base = declarative_base()
 
+# 3. Create a session factory
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False
+)
+
 def get_db():
+    """
+    Dependency for FastAPI (or similar frameworks).
+    Yields a database session, then closes it.
+    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-print("Loaded ENV variables:")
-print("DB_USER:", os.getenv("DB_USER"))
-print("DB_PASSWORD:", os.getenv("DB_PASSWORD"))
-print("DB_HOST:", os.getenv("DB_HOST"))
-print("DB_NAME:", os.getenv("DB_NAME"))

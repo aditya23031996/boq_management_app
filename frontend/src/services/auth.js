@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export async function registerUser({ firstName, lastName, email, password, companyName, companyGST }) {
     try {
-        const response = await axios.post('http://127.0.0.1:8000/users/register', {
+        const response = await axios.post('http://127.0.0.1:8000/user/register', {
             first_name: firstName,
             last_name: lastName,
             email: email,

@@ -1,18 +1,19 @@
 // src/pages/Dashboard.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import Sidebar from "../../../components/SideBar";
-import { 
-  Bell, 
-  FileText, 
-  CreditCard, 
-  BarChart3, 
-  CheckSquare, 
-  Settings, 
+import DashboardLayout from "../components3/DashboardLayout";
+import {
+  Bell,
+  FileText,
+  CreditCard,
+  BarChart3,
+  CheckSquare,
+  Settings,
   Folder,
   User,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  PlusCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -25,7 +26,7 @@ import {
   LineChart,
   Line,
   Legend,
-  ComposedChart
+  ComposedChart,
 } from "recharts";
 
 // Sample KPI data
@@ -107,98 +108,9 @@ const sampleNotifications = [
 const allCategories = ["All", "Infrastructure", "Transportation", "Energy", "Utilities"];
 const allManagers   = ["All", "Alice", "Bob", "Charlie"];
 
-// Receivables Aging Component
-function ReceivablesAging() {
-  const receivablesData = [
-    {
-      name: "Receivables",
-      current: 0,
-      overdue1_15: 0,
-      days16_30: 118000,
-      days31_45: 0,
-      above45: 19706,
-    },
-  ];
-
-  const currentVal   = Number(receivablesData[0].current)    || 0;
-  const overdueVal   = Number(receivablesData[0].overdue1_15)|| 0;
-  const days1630Val  = Number(receivablesData[0].days16_30)  || 0;
-  const days3145Val  = Number(receivablesData[0].days31_45)  || 0;
-  const above45Val   = Number(receivablesData[0].above45)    || 0;
-
-  const total     = currentVal + overdueVal + days1630Val + days3145Val + above45Val;
-  const safeTotal = total > 0 ? total : 1;
-
-  const colors = {
-    current:     "#60A5FA",
-    overdue1_15: "#FBBF24",
-    days16_30:   "#F97316",
-    days31_45:   "#EF4444",
-    above45:     "#B91C1C",
-  };
-
-  return (
-    <div className="bg-white shadow rounded-lg p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold">Total Receivables</h2>
-        <button className="text-blue-600 text-sm">+ New</button>
-      </div>
-      <p className="text-gray-500 text-sm mb-2">₹{total.toLocaleString()}</p>
-            <div style={{ height: 24 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={receivablesData}
-            layout="vertical"                      // ← bars horizontal
-            margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-          >
-            <YAxis type="category" dataKey="name" hide />
-            <XAxis type="number" hide domain={[0, safeTotal]} />
-            <Bar dataKey="current" stackId="a" barSize={8}>
-              <Cell fill={colors.current} />
-            </Bar>
-            <Bar dataKey="overdue1_15" stackId="a" barSize={8}>
-              <Cell fill={colors.overdue1_15} />
-            </Bar>
-            <Bar dataKey="days16_30" stackId="a" barSize={8}>
-              <Cell fill={colors.days16_30} />
-            </Bar>
-            <Bar dataKey="days31_45" stackId="a" barSize={8}>
-              <Cell fill={colors.days31_45} />
-            </Bar>
-            <Bar dataKey="above45" stackId="a" barSize={8}>
-              <Cell fill={colors.above45} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-// Helper to format numbers & ₹-strings
-function formatNumber(value) {
-  if (typeof value === "number") {
-    if (value < 1e3) return value;
-    if (value < 1e5) return (value / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
-    if (value < 1e7) return (value / 1e5).toFixed(1).replace(/\.0$/, "") + "L";
-    return (value / 1e7).toFixed(1).replace(/\.0$/, "") + "Cr";
-  }
-  if (typeof value === "string" && value.startsWith("₹")) {
-    const num = Number(value.replace(/[₹,]/g, ""));
-    if (isNaN(num)) return value;
-    if (num < 1e3) return "₹" + num;
-    if (num < 1e5) return "₹" + (num / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
-    if (num < 1e7) return "₹" + (num / 1e5).toFixed(1).replace(/\.0$/, "") + "L";
-    return "₹" + (num / 1e7).toFixed(1).replace(/\.0$/, "") + "Cr";
-  }
-  return value;
-}
-
-// KPI Card update: use a unified text style throughout
 function KpiCard({ title, value, icon, change }) {
   const icons = { FileText, CreditCard, BarChart3, CheckSquare, Folder };
   const IconComponent = icons[icon] || FileText;
-
   let changeIcon = null;
   let changeColor = "text-gray-500";
   if (change > 0) {
@@ -208,34 +120,129 @@ function KpiCard({ title, value, icon, change }) {
     changeIcon = <ArrowDown size={14} className="text-red-600 inline-block" />;
     changeColor = "text-red-600";
   }
-
-  const formattedValue = formatNumber(value);
-
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 transition transform hover:-translate-y-1 rounded-lg p-4 flex flex-col space-y-1 shadow-lg text-sm">
-      <div className="flex items-center space-x-2">
-        <div className="p-2 bg-blue-100 rounded-full">
-          <IconComponent size={20} className="text-blue-600" />
-        </div>
-        <div>
-          <p className="text-sm text-gray-600 truncate">{title}</p>
-          <p className="text-sm font-medium text-gray-800">{formattedValue}</p>
-        </div>
+    <div className="bg-white border border-gray-200 rounded-md p-3 flex flex-col items-start shadow-sm min-w-[110px]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <div className="p-1 bg-gray-100 rounded mb-1">
+        <IconComponent size={18} className="text-[#154078]" />
       </div>
+      <div className="text-lg font-bold text-[#154078] leading-tight">{value}</div>
+      <div className="text-xs text-gray-500 mb-0.5 font-medium leading-tight">{title}</div>
       {change !== undefined && (
-        <p className={`text-sm ${changeColor} flex items-center`}>
-          {changeIcon}
-          <span className="ml-1">{Math.abs(change)}% last month</span>
-        </p>
+        <div className={`text-xs ${changeColor} flex items-center`}>{changeIcon}<span className="ml-1">{Math.abs(change)}%</span></div>
       )}
     </div>
   );
 }
 
-// Billing Trend Chart update: uniform text across chart and controls
+function SectionHeader({ children }) {
+  return (
+    <div className="flex items-center gap-2 mb-2 mt-2">
+      <span className="inline-block w-1 h-5 rounded bg-[#154078]" />
+      <h2 className="text-base font-semibold text-[#154078] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>{children}</h2>
+    </div>
+  );
+}
+
+function HeroSection({ username, company }) {
+  // Time-based greeting
+  const hour = new Date().getHours();
+  let greeting = "Good evening";
+  if (hour < 12) greeting = "Good morning";
+  else if (hour < 18) greeting = "Good afternoon";
+  return (
+    <div className="flex flex-col md:flex-row items-center justify-between bg-white border border-gray-200 rounded-md p-4 mb-4 shadow-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-lg md:text-xl font-bold text-[#154078] mb-0.5">{greeting}, {username}!</h1>
+        <p className="text-gray-600 text-sm">Welcome to <span className="font-semibold text-[#154078]">{company}</span>'s BOQ Dashboard.</p>
+      </div>
+      <Link to="/project/create" className="mt-3 md:mt-0 px-4 py-1.5 rounded bg-[#154078] text-white font-semibold shadow hover:bg-[#1e3a8a] transition text-sm">+ Create New Project</Link>
+    </div>
+  );
+}
+
+function QuickActions() {
+  return (
+    <div className="flex flex-wrap gap-3 mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <Link to="/project/create" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
+        <PlusCircle size={15} /> New Project
+      </Link>
+      <Link to="/builder" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
+        <FileText size={15} /> New BoQ
+      </Link>
+      <Link to="/reports" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
+        <BarChart3 size={15} /> Reports
+      </Link>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const color = status === "Completed" ? "bg-green-100 text-green-700" : status === "In Progress" ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700";
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{status}</span>;
+}
+
+function RecentBoqsTable({ boqs }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-left text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th className="px-3 py-2 font-semibold text-gray-700">Project</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Created</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Scope</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Billing</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Status</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Manager</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {boqs.map((bq) => (
+            <tr key={bq.id} className="border-b hover:bg-gray-50 transition">
+              <td className="px-3 py-2 font-medium text-[#154078]">{bq.projectName}</td>
+              <td className="px-3 py-2">{bq.createdAt}</td>
+              <td className="px-3 py-2">{bq.scope}</td>
+              <td className="px-3 py-2">{bq.billings}</td>
+              <td className="px-3 py-2"><StatusBadge status={bq.status} /></td>
+              <td className="px-3 py-2">{bq.manager}</td>
+              <td className="px-3 py-2">
+                <Link to={`/boq/${bq.id}`} className="text-[#154078] hover:underline font-semibold">View</Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function NotificationCard({ notifications }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-[#154078] flex items-center gap-2">
+          <Bell size={14} /> Notifications
+        </h2>
+        <button className="text-xs text-blue-600 hover:underline">Clear All</button>
+      </div>
+      <ul className="space-y-1 max-h-48 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <li className="text-gray-500 text-center">No new notifications.</li>
+        ) : (
+          notifications.map((n) => (
+            <li key={n.id} className="flex items-center gap-1.5 p-1 bg-gray-50 rounded">
+              <Bell size={12} className="text-blue-600" />
+              <span className="text-gray-700 text-xs">{n.message}</span>
+            </li>
+          ))
+        )}
+      </ul>
+    </div>
+  );
+}
+
 function BillingTrendChart() {
   const [rollingPeriod, setRollingPeriod] = useState(3);
-
   const data = [
     { month: "Jan", completed: 150000, inProgress: 50000 },
     { month: "Feb", completed: 130000, inProgress: 50000 },
@@ -250,12 +257,10 @@ function BillingTrendChart() {
     { month: "Nov", completed: 170000, inProgress: 35000 },
     { month: "Dec", completed: 210000, inProgress: 30000 },
   ];
-
   const dataWithTotal = data.map(item => ({
     ...item,
     total: item.completed + item.inProgress,
   }));
-
   function computeRollingAverage(dataArr, period) {
     const result = [];
     for (let i = 0; i < dataArr.length; i++) {
@@ -271,10 +276,7 @@ function BillingTrendChart() {
     }
     return result;
   }
-
   const rollingAvg = computeRollingAverage(dataWithTotal, rollingPeriod);
-
-  // Forecast for next 3 months using the last valid rolling average value.
   const forecastMonths = ["Jan*", "Feb*", "Mar*"];
   const lastRolling = rollingAvg.slice().reverse().find(val => val !== null) || 0;
   const forecastData = forecastMonths.map(m => ({
@@ -284,26 +286,24 @@ function BillingTrendChart() {
     total: null,
     rollingAvg: lastRolling,
   }));
-
   const chartData = [
     ...dataWithTotal.map((d, i) => ({ ...d, rollingAvg: rollingAvg[i] })),
     ...forecastData,
   ];
-
   return (
-    <div className="bg-white shadow rounded-lg p-4 text-sm">
+    <div className="bg-white border border-gray-200 rounded-md shadow-sm p-3 text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm mb-2">Billing Trend (12 mo)</h2>
+        <h2 className="text-xs mb-2 font-semibold text-gray-700">Billing Trend (12 mo)</h2>
         <div className="flex items-center gap-2">
-          <span className="text-sm">Rolling Avg:</span>
+          <span className="text-xs">Rolling Avg:</span>
           {[3, 6, 12].map(period => (
             <button
               key={period}
               onClick={() => setRollingPeriod(period)}
-              className={`px-2 py-1 rounded-full text-sm ${
+              className={`px-2 py-1 rounded-full text-xs border ${
                 rollingPeriod === period
-                  ? "bg-[#154078] text-white"
-                  : "bg-gray-200 text-gray-800"
+                  ? "bg-[#154078] text-white border-[#154078]"
+                  : "bg-gray-100 text-gray-800 border-gray-200"
               }`}
             >
               {period} mo
@@ -311,7 +311,7 @@ function BillingTrendChart() {
           ))}
         </div>
       </div>
-      <ResponsiveContainer width="80%" height={200}>
+      <ResponsiveContainer width="100%" height={160}>
         <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="gradientCompleted" x1="0" y1="0" x2="0" y2="1">
@@ -323,13 +323,13 @@ function BillingTrendChart() {
               <stop offset="95%" stopColor="#154078" stopOpacity={0.1} />
             </linearGradient>
           </defs>
-          <XAxis dataKey="month" stroke="#154078" tick={{ fontSize: 12 }} />
-          <YAxis stroke="#154078" tick={{ fontSize: 12 }} />
-          <Tooltip contentStyle={{ fontSize: "12px" }} />
-          <Legend verticalAlign="top" wrapperStyle={{ fontSize: "12px", color: "#154078" }} />
-          <Bar dataKey="completed" stackId="a" fill="url(#gradientCompleted)" barSize={18} />
-          <Bar dataKey="inProgress" stackId="a" fill="url(#gradientInProgress)" barSize={18} />
-          <Line dataKey="rollingAvg" stroke="#48bb78" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 4 }} />
+          <XAxis dataKey="month" stroke="#154078" tick={{ fontSize: 10 }} />
+          <YAxis stroke="#154078" tick={{ fontSize: 10 }} />
+          <Tooltip contentStyle={{ fontSize: "10px" }} />
+          <Legend verticalAlign="top" wrapperStyle={{ fontSize: "10px", color: "#154078" }} />
+          <Bar dataKey="completed" stackId="a" fill="url(#gradientCompleted)" barSize={12} />
+          <Bar dataKey="inProgress" stackId="a" fill="url(#gradientInProgress)" barSize={12} />
+          <Line dataKey="rollingAvg" stroke="#48bb78" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 3 }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -337,139 +337,27 @@ function BillingTrendChart() {
 }
 
 export default function Dashboard() {
-  const [collapsed, setCollapsed]           = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const contentMarginLeft                   = collapsed ? "4rem" : "12rem";
-
-  const username         = "@username";
-  const userCompanyName  = "@user_company_name";
-
-  const [searchQuery, setSearchQuery]   = useState("");
+  const username = "Alex";
+  const userCompanyName = "Acme Builders";
+  const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [managerFilter, setManagerFilter]   = useState("All");
-  const [showFilters, setShowFilters]       = useState(false);
-
+  const [managerFilter, setManagerFilter] = useState("All");
   const filteredBoqs = sampleRecentBoqs.filter((bq) => {
-    const matchesSearch   = bq.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = bq.projectName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "All" || bq.category === categoryFilter;
-    const matchesManager  = managerFilter  === "All" || bq.manager  === managerFilter;
+    const matchesManager = managerFilter === "All" || bq.manager === managerFilter;
     return matchesSearch && matchesCategory && matchesManager;
   });
-
   return (
-    <>
-      <Sidebar collapsed={collapsed} toggleSidebar={() => setCollapsed(!collapsed)} />
-      <div
-        className="max-w-7xl mx-auto px-6 py-8 transition-all duration-300"
-        style={{ marginLeft: contentMarginLeft }}
-      >
-        {/* Top Bar */}
-        <div className="mb-6">
-          <div className="bg-white shadow rounded-lg px-6 py-4 flex items-center justify-between">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Search projects by name..."
-                className="w-full border border-gray-300 rounded-md p-2"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setShowFilters(true)}
-                onBlur={() => setTimeout(() => setShowFilters(false), 150)}
-              />
-              {showFilters && (
-                <div className="absolute top-full left-0 z-10 mt-2 w-full bg-white border border-gray-300 rounded-md p-4 shadow">
-                  <div className="mb-4">
-                    <h3 className="text-sm mb-1">Category</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {allCategories.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => setCategoryFilter(cat)}
-                          className={`px-3 py-1 rounded-full text-sm transition ${
-                            categoryFilter === cat
-                              ? "bg-[#154078] text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm mb-1">Project Manager</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {allManagers.map((mgr) => (
-                        <button
-                          key={mgr}
-                          onClick={() => setManagerFilter(mgr)}
-                          className={`px-3 py-1 rounded-full text-sm transition ${
-                            managerFilter === mgr
-                              ? "bg-[#154078] text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          {mgr}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center ml-4 space-x-2">
-              <button
-                onClick={() => setShowNotifications((p) => !p)}
-                className="p-2 rounded-full hover:bg-gray-200"
-                aria-label="Toggle Notifications"
-              >
-                <Bell size={24} className="text-gray-800" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-gray-200">
-                <User size={24} className="text-gray-800" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        {showNotifications && (
-          <div className="mb-6 bg-white shadow-lg rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl text-[#154078] flex items-center gap-2">
-                <Bell size={24} /> Notifications
-              </h2>
-              <button className="text-sm text-blue-600 hover:underline">
-                Clear All
-              </button>
-            </div>
-            <ul className="space-y-4 max-h-64 overflow-y-auto">
-              {sampleNotifications.length === 0 ? (
-                <li className="text-gray-500 text-center">No new notifications.</li>
-              ) : (
-                sampleNotifications.map((n) => (
-                  <li
-                    key={n.id}
-                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-100 to-blue-50 rounded-lg"
-                  >
-                    <Bell size={20} className="text-blue-600" />
-                    <span className="text-gray-700">{n.message}</span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* Greeting */}
-        <div className="mb-6">
-          <h1 className="text-lg text-gray-800">
-            Hello {username}, {userCompanyName}
-          </h1>
-        </div>
-
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto px-4 py-6 transition-all duration-300" style={{ fontFamily: 'Inter, sans-serif', background: '#f7f8fa', minHeight: '100vh' }}>
+        {/* Hero Section */}
+        <HeroSection username={username} company={userCompanyName} />
+        {/* Quick Actions */}
+        <QuickActions />
         {/* KPI Grid */}
-        <div className="mb-8 grid grid-cols-7 gap-4">
+        <SectionHeader>Key Metrics</SectionHeader>
+        <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <KpiCard title="Total Projects" value={3} icon="Folder" change={sampleKpis.projectsChange} />
           <KpiCard title="Total BoQs" value={sampleRecentBoqs.length} icon="FileText" change={sampleKpis.boqsChange} />
           <KpiCard title="Total Scope" value={sampleKpis.totalScope} icon="FileText" change={sampleKpis.scopeChange} />
@@ -478,55 +366,22 @@ export default function Dashboard() {
           <KpiCard title="Balance to Bill" value={sampleKpis.balanceToBill} icon="BarChart3" change={sampleKpis.balanceChange} />
           <KpiCard title="Work Completed" value={`${sampleKpis.workCompleted}%`} icon="CheckSquare" change={sampleKpis.workCompletedChange} />
         </div>
-
-        {/* Receivables Aging */}
-        <div className="mb-8">
-          <ReceivablesAging />
-        </div>
-
         {/* Charts Section */}
-        <div className="mb-8">
+        <SectionHeader>Billing Overview</SectionHeader>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <BillingTrendChart />
+          <NotificationCard notifications={sampleNotifications} />
         </div>
-
         {/* Recent BoQs */}
-        <div className="mb-8 bg-white shadow rounded-lg">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-xl">Recent BoQs</h2>
-            <Link to="/builder" className="text-[#154078]">+ New BoQ</Link>
+        <SectionHeader>Recent BoQs</SectionHeader>
+        <div className="mb-6 bg-white border border-gray-200 shadow-sm rounded-md">
+          <div className="flex items-center justify-between p-3 border-b">
+            <h2 className="text-sm font-semibold text-[#154078]">Recent BoQs</h2>
+            <Link to="/builder" className="text-[#154078] font-semibold flex items-center gap-1 text-sm"><PlusCircle size={15}/> New BoQ</Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2">Project</th>
-                  <th className="px-4 py-2">Created</th>
-                  <th className="px-4 py-2">Scope</th>
-                  <th className="px-4 py-2">Billing</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBoqs.map((bq) => (
-                  <tr key={bq.id} className="border-t">
-                    <td className="px-4 py-2">{bq.projectName}</td>
-                    <td className="px-4 py-2">{bq.createdAt}</td>
-                    <td className="px-4 py-2">{bq.scope}</td>
-                    <td className="px-4 py-2">{bq.billings}</td>
-                    <td className="px-4 py-2">{bq.status}</td>
-                    <td className="px-4 py-2">
-                      <Link to={`/boq/${bq.id}`} className="text-[#154078] hover:underline">
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RecentBoqsTable boqs={filteredBoqs} />
         </div>
       </div>
-    </>
+    </DashboardLayout>
   );
 }

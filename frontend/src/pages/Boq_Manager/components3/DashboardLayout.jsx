@@ -1,12 +1,12 @@
 import { useState } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar from "./SideBar";
 import { ChevronDown } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const toggleSidebar = () => {
-    setCollapsed(!collapsed);
+    setCollapsed((prev) => !prev);
   };
 
   return (
@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }) {
       {/* Main Area */}
       <div
         className="flex flex-col flex-1 transition-all duration-300"
-        style={{ marginLeft: collapsed ? '5rem' : '16rem' }}
+        style={{ marginLeft: collapsed ? '3rem' : '12rem' }}
       >
         {/* Top Navbar */}
         <header className="h-16 bg-white flex items-center justify-between px-6 shadow-sm border-b">
@@ -39,4 +39,4 @@ export default function DashboardLayout({ children }) {
       </div>
     </div>
   );
-}
+} 

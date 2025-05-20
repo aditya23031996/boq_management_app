@@ -1,3 +1,4 @@
+// Sidebar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -36,7 +37,7 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
       {/* Brand */}
       <div className={`flex items-center justify-center h-14 border-b border-[#1E293B] ${collapsed ? 'px-0' : 'px-3'}`}>
         {!collapsed && (
-          <span className="text-lg font-bold tracking-tight text-white">BOQ Manager</span>
+          <span className="text-lg font-regular tracking-tight text-white">Bill of Quantities Manager</span>
         )}
       </div>
       {/* Navigation */}
@@ -76,4 +77,4 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
       </div>
     </aside>
   );
-} 
+}

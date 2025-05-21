@@ -44,7 +44,9 @@ def create_boq(boq: BOQCreate, db: Session = Depends(get_db)):
         title=boq.title,
         description=boq.description,
         project_id=boq.project_id,
-        total_amount=0.0
+        total_amount=0.0,
+        billing_completed=boq.billing_completed or "",
+        work_completed=boq.work_completed or ""
     )
     db.add(db_boq)
     db.commit()
@@ -52,7 +54,7 @@ def create_boq(boq: BOQCreate, db: Session = Depends(get_db)):
     total = 0.0
     for item in boq.items:
         db_item = create_boq_item(db, db_boq.id, item)
-        total += db_item.total_price
+        total += getattr(db_item, 'total_price', 0.0)
     db_boq.total_amount = total
     db.commit()
     db.refresh(db_boq)
@@ -90,8 +92,12 @@ def build_boq_item(item: BOQ) -> dict:
 def get_all_boqs(db: Session = Depends(get_db)):
     boqs = db.query(BOQ).all()
     for boq in boqs:
-        # Only top-level items (no parent)
         boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.id, parent_item_id=None).all()]
+        # Attach project name for frontend
+        if boq.project:
+            boq.project_name = boq.project.name
+        else:
+            boq.project_name = "-"
     return boqs
 
 @router.get("/{boq_id}", response_model=BOQSchema)
@@ -121,7 +127,7 @@ def update_boq(boq_id: int, boq_update: BOQCreate, db: Session = Depends(get_db)
     db.refresh(boq)
     return boq
 
-@router.post("/{boq_id}/item/", response_model=BOQItem)
+@router.post("/{boq_id}/item/", response_model=BOQItemSchema)
 def create_boq_item(boq_id: int, item: BOQItemCreate, db: Session = Depends(get_db)):
     db_item = BOQItem(
         boq_id=boq_id,
@@ -142,7 +148,7 @@ def create_boq_item(boq_id: int, item: BOQItemCreate, db: Session = Depends(get_
     db.refresh(db_item)
     return db_item
 
-@router.post("/{boq_id}/item/{parent_item_id}/subitem/", response_model=BOQItem)
+@router.post("/{boq_id}/item/{parent_item_id}/subitem/", response_model=BOQItemSchema)
 def create_boq_subitem(boq_id: int, parent_item_id: int, item: BOQItemCreate, db: Session = Depends(get_db)):
     db_item = BOQItem(
         boq_id=boq_id,
@@ -163,14 +169,14 @@ def create_boq_subitem(boq_id: int, parent_item_id: int, item: BOQItemCreate, db
     db.refresh(db_item)
     return db_item
 
-@router.get("/item/{item_id}", response_model=BOQItem)
+@router.get("/item/{item_id}", response_model=BOQItemSchema)
 def get_boq_item(item_id: int, db: Session = Depends(get_db)):
     item = db.query(BOQItem).get(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="BOQ Item not found")
     return item
 
-@router.put("/item/{item_id}", response_model=BOQItem)
+@router.put("/item/{item_id}", response_model=BOQItemSchema)
 def update_boq_item(item_id: int, item_update: BOQItemUpdate, db: Session = Depends(get_db)):
     item = db.query(BOQItem).get(item_id)
     if not item:

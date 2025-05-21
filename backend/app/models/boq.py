@@ -13,6 +13,8 @@ class BOQ(Base):
     total_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    billing_completed = Column(String(255), nullable=True, default="")
+    work_completed = Column(String(255), nullable=True, default="")
 
     project = relationship("Project", back_populates="boqs")
     items = relationship("BOQItem", back_populates="boq", cascade="all, delete-orphan")

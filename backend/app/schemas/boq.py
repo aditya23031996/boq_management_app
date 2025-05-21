@@ -52,6 +52,8 @@ class BOQBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     project_id: int
+    billing_completed: Optional[str] = ""
+    work_completed: Optional[str] = ""
 
 class BOQCreate(BOQBase):
     items: List[BOQItemCreate]

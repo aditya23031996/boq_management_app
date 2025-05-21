@@ -30,22 +30,28 @@ export default function BOQTable() {
       <table className="min-w-full text-left text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
+            <th className="px-3 py-2 font-semibold text-gray-700">ID</th>
             <th className="px-3 py-2 font-semibold text-gray-700">Title</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Project</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Created</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Description</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Project Name</th>
             <th className="px-3 py-2 font-semibold text-gray-700">Total Amount</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Billing Completed</th>
+            <th className="px-3 py-2 font-semibold text-gray-700">Work Completed</th>
             <th className="px-3 py-2 font-semibold text-gray-700">Actions</th>
           </tr>
         </thead>
         <tbody>
           {boqs.length === 0 ? (
-            <tr><td colSpan={5} className="px-3 py-4 text-center text-gray-500">No BOQs found.</td></tr>
+            <tr><td colSpan={8} className="px-3 py-4 text-center text-gray-500">No BOQs found.</td></tr>
           ) : boqs.map((boq) => (
             <tr key={boq.id} className="border-b hover:bg-blue-50 transition">
+              <td className="px-3 py-2">{boq.id}</td>
               <td className="px-3 py-2 font-medium text-[#154078]">{boq.title}</td>
-              <td className="px-3 py-2">{boq.project_id || '-'}</td>
-              <td className="px-3 py-2">{boq.created_at ? new Date(boq.created_at).toLocaleDateString() : '-'}</td>
+              <td className="px-3 py-2">{boq.description || '-'}</td>
+              <td className="px-3 py-2">{boq.project_name || '-'}</td>
               <td className="px-3 py-2">₹{boq.total_amount?.toLocaleString() || '0'}</td>
+              <td className="px-3 py-2">{boq.billing_completed || ''}</td>
+              <td className="px-3 py-2">{boq.work_completed || ''}</td>
               <td className="px-3 py-2">
                 <button className="text-blue-600 hover:underline font-semibold text-xs">View</button>
               </td>

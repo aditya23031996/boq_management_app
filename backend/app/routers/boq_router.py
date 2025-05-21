@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.boq import BOQ, BOQItem
-from app.schemas.boq import BOQ as BOQSchema, BOQCreate, BOQItem, BOQItemCreate, BOQItemUpdate, PaymentBreakup, PaymentBreakupCreate
+from app.schemas.boq import BOQ as BOQSchema, BOQCreate, BOQItemCreate, BOQItemUpdate, PaymentBreakup, PaymentBreakupCreate, BOQItem as BOQItemSchema
 from typing import List, Optional
 
 router = APIRouter(

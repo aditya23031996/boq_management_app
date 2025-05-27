@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 
-export default function BOQTable() {
+export default function BOQTable({ project, onSelectBoq }) {
   const [boqs, setBoqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!project) return;
     setLoading(true);
-    fetch("/boq/")
+    fetch(`/boq/?project_id=${project.id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch BOQs");
         return res.json();
@@ -20,7 +21,7 @@ export default function BOQTable() {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [project]);
 
   if (loading) return <div className="p-4 text-gray-500">Loading BOQs...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -53,7 +54,12 @@ export default function BOQTable() {
               <td className="px-3 py-2">{boq.billing_completed || ''}</td>
               <td className="px-3 py-2">{boq.work_completed || ''}</td>
               <td className="px-3 py-2">
-                <button className="text-blue-600 hover:underline font-semibold text-xs">View</button>
+                <button
+                  className="text-blue-600 hover:underline font-semibold text-xs"
+                  onClick={() => onSelectBoq(boq)}
+                >
+                  View
+                </button>
               </td>
             </tr>
           ))}

@@ -1,17 +1,36 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectUpdate, Project as ProjectSchema
 from typing import List
+from app.utils.auth import get_current_user_id
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+import os
 
 router = APIRouter(
     prefix="/project",
     tags=["Project"]
 )
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecret")
+
+def get_current_user_id(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_id: int = int(payload.get("sub"))
+        return user_id
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication")
+
 @router.post("/", response_model=ProjectSchema)
-def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
+def create_project(
+    project: ProjectCreate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
     db_project = Project(
         name=project.name,
         category=project.category,
@@ -22,7 +41,8 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
         billing_progress=project.billing_progress,
         onsite_progress=project.onsite_progress,
         total_scope=project.total_scope,
-        description=project.description
+        description=project.description,
+        user_id=user_id
     )
     db.add(db_project)
     db.commit()
@@ -30,8 +50,8 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
     return db_project
 
 @router.get("/", response_model=List[ProjectSchema])
-def get_all_projects(db: Session = Depends(get_db)):
-    return db.query(Project).all()
+def get_all_projects(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
+    return db.query(Project).filter(Project.user_id == user_id).all()
 
 @router.get("/{project_id}", response_model=ProjectSchema)
 def get_project(project_id: int, db: Session = Depends(get_db)):
@@ -41,8 +61,13 @@ def get_project(project_id: int, db: Session = Depends(get_db)):
     return project
 
 @router.put("/{project_id}", response_model=ProjectSchema)
-def update_project(project_id: int, project_update: ProjectUpdate, db: Session = Depends(get_db)):
-    project = db.query(Project).get(project_id)
+def update_project(
+    project_id: int,
+    project_update: ProjectUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     project.name = project_update.name
@@ -60,8 +85,12 @@ def update_project(project_id: int, project_update: ProjectUpdate, db: Session =
     return project
 
 @router.delete("/{project_id}", response_model=ProjectSchema)
-def delete_project(project_id: int, db: Session = Depends(get_db)):
-    project = db.query(Project).get(project_id)
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     db.delete(project)

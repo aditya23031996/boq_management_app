@@ -5,6 +5,10 @@ from app.database.connection import get_db
 from app.models.user import User
 from app.schemas.user_schema import UserCreate, UserResponse, UserLogin, UserUpdate
 from passlib.hash import bcrypt
+from jose import jwt
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecret")  # Use a secure key in production
 
 router = APIRouter(
     prefix="/user",
@@ -42,14 +46,21 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user:
+    if not db_user or not bcrypt.verify(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
-    if not bcrypt.verify(user.password, db_user.password):
-        raise HTTPException(status_code=400, detail="Invalid email or password")
-    return db_user
+    # Create JWT token
+    token_data = {"sub": str(db_user.id)}
+    token = jwt.encode(token_data, SECRET_KEY, algorithm="HS256")
+    return {"token": token, "user": {
+        "id": db_user.id,
+        "email": db_user.email,
+        "first_name": db_user.first_name,
+        "last_name": db_user.last_name,
+        # ...other fields...
+    }}
 
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):

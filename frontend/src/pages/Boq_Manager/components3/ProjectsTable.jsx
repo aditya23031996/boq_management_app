@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../../../context/AuthContext.jsx";
+import { apiFetch } from "../../../services/api";
 
 function StatusBadge({ status }) {
   const color = status === "Completed"
@@ -9,27 +11,22 @@ function StatusBadge({ status }) {
   return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{status || 'N/A'}</span>;
 }
 
-export default function ProjectsTable() {
+export default function ProjectsTable({ onSelectProject }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     setLoading(true);
-    fetch("/project/")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch projects");
-        return res.json();
-      })
-      .then((data) => {
-        setProjects(data);
-        setLoading(false);
-      })
+    apiFetch("/project/", {}, token)
+      .then(res => res.json())
+      .then(setProjects)
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [token]);
 
   if (loading) return <div className="p-4 text-gray-500">Loading projects...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -80,7 +77,12 @@ export default function ProjectsTable() {
               </td>
               <td className="px-3 py-2">{project.total_scope || 0}</td>
               <td className="px-3 py-2">
-                <button className="text-blue-600 hover:underline font-semibold text-xs">View</button>
+                <button
+                  className="text-blue-600 hover:underline font-semibold text-xs"
+                  onClick={() => onSelectProject(project)}
+                >
+                  View
+                </button>
               </td>
             </tr>
           ))}

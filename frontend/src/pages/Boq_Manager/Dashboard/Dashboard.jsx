@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "../components3/DashboardLayout";
 import {
@@ -28,6 +28,7 @@ import {
   Legend,
   ComposedChart,
 } from "recharts";
+import { useAuth } from "/src/context/AuthContext.jsx";
 
 // Sample KPI data
 const sampleKpis = {
@@ -337,29 +338,40 @@ function BillingTrendChart() {
 }
 
 export default function Dashboard() {
-  const username = "Alex";
-  const userCompanyName = "Acme Builders";
+  const { user, token } = useAuth();
+  const [projects, setProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [managerFilter, setManagerFilter] = useState("All");
-  const filteredBoqs = sampleRecentBoqs.filter((bq) => {
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/project/?user_id=${user.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(setProjects);
+  }, [user, token]);
+
+  const filteredBoqs = projects.filter((bq) => {
     const matchesSearch = bq.projectName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "All" || bq.category === categoryFilter;
     const matchesManager = managerFilter === "All" || bq.manager === managerFilter;
     return matchesSearch && matchesCategory && matchesManager;
   });
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4 py-6 transition-all duration-300" style={{ fontFamily: 'Inter, sans-serif', background: '#f7f8fa', minHeight: '100vh' }}>
         {/* Hero Section */}
-        <HeroSection username={username} company={userCompanyName} />
+        <HeroSection username={user?.name} company={user?.company} />
         {/* Quick Actions */}
         <QuickActions />
         {/* KPI Grid */}
         <SectionHeader>Key Metrics</SectionHeader>
         <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          <KpiCard title="Total Projects" value={3} icon="Folder" change={sampleKpis.projectsChange} />
-          <KpiCard title="Total BoQs" value={sampleRecentBoqs.length} icon="FileText" change={sampleKpis.boqsChange} />
+          <KpiCard title="Total Projects" value={projects.length} icon="Folder" change={sampleKpis.projectsChange} />
+          <KpiCard title="Total BoQs" value={projects.length} icon="FileText" change={sampleKpis.boqsChange} />
           <KpiCard title="Total Scope" value={sampleKpis.totalScope} icon="FileText" change={sampleKpis.scopeChange} />
           <KpiCard title="Billings Completed" value={sampleKpis.billingsCompleted} icon="CreditCard" change={sampleKpis.billingsCompletedChange} />
           <KpiCard title="Billings In Progress" value={sampleKpis.billingsInProgress} icon="CreditCard" change={sampleKpis.billingsInProgressChange} />

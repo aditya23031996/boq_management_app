@@ -3,18 +3,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { loginUser } from "../../../services/auth";
 import { toast } from 'react-hot-toast';
+import { useAuth } from "../../../context/AuthContext.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const password = e.target.password.value;
 
     try {
-      loginUser(email, password);
+      const { token, user } = await loginUser(email, password);
+      login(token, user);
       toast.success('Login successful! 🎉');
       navigate("/dashboard");
     } catch (err) {

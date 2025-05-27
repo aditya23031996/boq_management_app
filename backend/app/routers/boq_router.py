@@ -62,7 +62,7 @@ def create_boq(boq: BOQCreate, db: Session = Depends(get_db)):
 
 # Helper to recursively build nested items for GET
 
-def build_boq_item(item: BOQ) -> dict:
+def build_boq_item(item: BOQItem) -> dict:
     return {
         "id": item.id,
         "boq_id": item.boq_id,
@@ -89,11 +89,13 @@ def build_boq_item(item: BOQ) -> dict:
     }
 
 @router.get("/", response_model=List[BOQSchema])
-def get_all_boqs(db: Session = Depends(get_db)):
-    boqs = db.query(BOQ).all()
+def get_all_boqs(project_id: Optional[int] = None, db: Session = Depends(get_db)):
+    query = db.query(BOQ)
+    if project_id:
+        query = query.filter(BOQ.project_id == project_id)
+    boqs = query.all()
     for boq in boqs:
         boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.id, parent_item_id=None).all()]
-        # Attach project name for frontend
         if boq.project:
             boq.project_name = boq.project.name
         else:

@@ -19,15 +19,14 @@ export async function registerUser({ firstName, lastName, email, password, compa
 }
 
 export async function loginUser(email, password) {
-    try {
-        // You need to create a /users/login API in FastAPI to validate login
-        const response = await axios.post('http://127.0.0.1:8000/users/login', { email, password });
-        localStorage.setItem("loggedInUser", JSON.stringify(response.data));
-        return response.data;
-    } catch (error) {
-        console.error('Login Error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.detail || 'Login failed');
-    }
+    const res = await fetch("/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error("Invalid credentials");
+    const data = await res.json();
+    return data;
 }
 
 export function logoutUser() {

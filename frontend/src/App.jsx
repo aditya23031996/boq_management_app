@@ -6,22 +6,27 @@ import Register from "./pages/Boq_Manager/Register/Register";
 import Dashboard from "./pages/Boq_Manager/Dashboard/Dashboard";
 import Projects from "./pages/Boq_Manager/Projects/Projects";
 import BOQ from "./pages/Boq_Manager/BOQ/BOQ";
+import BOQManager from "./pages/Boq_Manager/BOQ/BOQManager";
+import { AuthProvider } from "./context/AuthContext.jsx";
 
 function App() {
   return (
-    <BrowserRouter>
-      {/* ✅ Add Toaster at the top level */}
-      <Toaster position="top-center" reverseOrder={false} />
-      
-      <Routes>
-        <Route path="/" element={<Homepage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/boq" element={<BOQ />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        {/* ✅ Add Toaster at the top level */}
+        <Toaster position="top-center" reverseOrder={false} />
+        
+        <Routes>
+          <Route path="/" element={<Homepage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/boq" element={<BOQ />} />
+          <Route path="/boq-manager" element={<BOQManager />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

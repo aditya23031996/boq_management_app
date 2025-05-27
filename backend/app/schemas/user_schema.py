@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
     company_gst: str
 
 class UserResponse(BaseModel):
-    id: int
+    user_id: int
     first_name: str
     last_name: str
     email: str

@@ -97,3 +97,11 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.commit()
     return user
 
+@router.delete("/", response_model=List[UserResponse])
+def delete_all_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    for user in users:
+        db.delete(user)
+    db.commit()
+    return users
+

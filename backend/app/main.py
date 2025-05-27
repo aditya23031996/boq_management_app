@@ -4,6 +4,9 @@ from .database.config import engine, Base
 from app.routers.boq_router import router as boq_router
 from app.routers.user_router import router as user_router
 from app.routers.project_router import router as project_router
+from app.routers.boq_item_router import router as boq_item_router
+from app.routers.boq_subitem_router import router as boq_subitem_router
+from app.routers.payment_breakup_router import router as payment_breakup_router
 
 # Explicitly import all models so SQLAlchemy knows about them
 from app.models.project import Project
@@ -32,6 +35,9 @@ app.add_middleware(
 app.include_router(boq_router)
 app.include_router(user_router)
 app.include_router(project_router)
+app.include_router(boq_item_router)
+app.include_router(boq_subitem_router)
+app.include_router(payment_breakup_router)
 
 @app.get("/")
 def root():

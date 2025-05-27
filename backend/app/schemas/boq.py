@@ -10,7 +10,7 @@ class PaymentBreakupCreate(PaymentBreakupBase):
     pass
 
 class PaymentBreakup(PaymentBreakupBase):
-    id: int
+    payment_breakup_id: int
     boq_item_id: int
     created_at: datetime
     updated_at: datetime
@@ -18,14 +18,16 @@ class PaymentBreakup(PaymentBreakupBase):
         orm_mode = True
 
 class BOQItemBase(BaseModel):
+    boq_id: int
+    parent_item_id: Optional[int] = None
     wbs_id: Optional[str] = None
     category1: Optional[str] = None
     category2: Optional[str] = None
     category3: Optional[str] = None
     description: str = Field(..., min_length=1, max_length=500)
-    uom: Optional[str] = None
+    uom: str
     scope_quantity: Optional[float] = None
-    sor: Optional[float] = None
+    sor: float
     total_amount: Optional[float] = None
     notes: Optional[str] = None
     subItems: Optional[List['BOQItemCreate']] = []
@@ -38,9 +40,7 @@ class BOQItemUpdate(BOQItemBase):
     pass
 
 class BOQItem(BOQItemBase):
-    id: int
-    boq_id: int
-    parent_item_id: Optional[int] = None
+    boq_item_id: int
     created_at: datetime
     updated_at: datetime
     subItems: List['BOQItem'] = []
@@ -49,9 +49,9 @@ class BOQItem(BOQItemBase):
         orm_mode = True
 
 class BOQBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
     project_id: int
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str
     billing_completed: Optional[str] = ""
     work_completed: Optional[str] = ""
 
@@ -62,7 +62,7 @@ class BOQUpdate(BOQBase):
     items: Optional[List[BOQItemCreate]] = None
 
 class BOQ(BOQBase):
-    id: int
+    boq_id: int
     total_amount: float
     items: List[BOQItem]
     created_at: datetime

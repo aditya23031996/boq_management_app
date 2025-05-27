@@ -3,16 +3,17 @@ from typing import Optional
 from datetime import datetime
 
 class ProjectBase(BaseModel):
+    user_id: int
     name: str
-    category: Optional[str] = None
-    location: Optional[str] = None
+    category: str
+    location: str
     client_name: str
-    project_manager: Optional[str] = None
-    status: Optional[str] = None
-    billing_progress: Optional[int] = 0
-    onsite_progress: Optional[int] = 0
-    total_scope: Optional[int] = 0
-    description: Optional[str] = None
+    project_manager: str
+    status: str
+    billing_progress: float = 0
+    onsite_progress: float = 0
+    total_scope: float = 0
+    description: str
 
 class ProjectCreate(ProjectBase):
     pass
@@ -21,7 +22,7 @@ class ProjectUpdate(ProjectBase):
     pass
 
 class Project(ProjectBase):
-    id: int
+    project_id: int
     created_at: datetime
     updated_at: datetime
 

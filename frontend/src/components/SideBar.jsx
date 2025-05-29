@@ -76,4 +76,4 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
       </div>
     </aside>
   );
-} 
+}

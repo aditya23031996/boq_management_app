@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.boq import BOQ, BOQItem
+from app.models.project import Project
 from app.schemas.boq import BOQ as BOQSchema, BOQCreate, BOQItemCreate, BOQItemUpdate, PaymentBreakup, PaymentBreakupCreate, BOQItem as BOQItemSchema
 from typing import List, Optional
 
@@ -38,8 +39,11 @@ def create_boq_item(db: Session, boq_id: int, item_data: BOQItemCreate, parent_i
             create_boq_item(db, boq_id, sub, parent_item=db_item)
     return db_item
 
-@router.post("/{project_id}", response_model=BOQSchema)
-def create_boq_for_project(project_id: int, boq: BOQCreate, db: Session = Depends(get_db)):
+@router.post("/{user_id}/{project_id}", response_model=BOQSchema)
+def create_boq(user_id: int, project_id: int, boq: BOQCreate, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     db_boq = BOQ(
         title=boq.title,
         description=boq.description,
@@ -59,8 +63,6 @@ def create_boq_for_project(project_id: int, boq: BOQCreate, db: Session = Depend
     db.commit()
     db.refresh(db_boq)
     return db_boq
-
-# Helper to recursively build nested items for GET
 
 def build_boq_item(item: BOQItem) -> dict:
     return {
@@ -91,35 +93,68 @@ def build_boq_item(item: BOQItem) -> dict:
 @router.get("/", response_model=List[BOQSchema])
 def get_all_boqs(db: Session = Depends(get_db)):
     boqs = db.query(BOQ).all()
+    result = []
     for boq in boqs:
-        boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.id, parent_item_id=None).all()]
-        if boq.project:
-            boq.project_name = boq.project.name
-        else:
-            boq.project_name = "-"
-    return boqs
+        boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.boq_id, parent_item_id=None).all()]
+        project = db.query(Project).filter(Project.project_id == boq.project_id).first()
+        boq_dict = boq.__dict__.copy()
+        boq_dict['project_name'] = getattr(project, 'name', '-') if project else "-"
+        boq_dict['boq_id'] = boq.boq_id
+        boq_dict['items'] = boq.items
+        result.append(boq_dict)
+    return result
 
-@router.get("/{project_id}", response_model=List[BOQSchema])
-def get_boqs_for_project(project_id: int, db: Session = Depends(get_db)):
+@router.get("/{user_id}", response_model=List[BOQSchema])
+def get_boqs_for_user(user_id: int, db: Session = Depends(get_db)):
+    projects = db.query(Project).filter(Project.user_id == user_id).all()
+    project_ids = [p.project_id for p in projects]
+    if not project_ids:
+        return []  # Return empty list if user has no projects
+    boqs = db.query(BOQ).filter(BOQ.project_id.in_(project_ids)).all()
+    result = []
+    for boq in boqs:
+        boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.boq_id, parent_item_id=None).all()]
+        # Attach project_name and ensure boq_id is present
+        project = next((p for p in projects if p.project_id == boq.project_id), None)
+        boq_dict = boq.__dict__.copy()
+        boq_dict['project_name'] = getattr(project, 'name', '-') if project else "-"
+        boq_dict['boq_id'] = boq.boq_id
+        boq_dict['items'] = boq.items
+        result.append(boq_dict)
+    return result
+
+@router.get("/{user_id}/{project_id}", response_model=List[BOQSchema])
+def get_boqs_for_project(user_id: int, project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     boqs = db.query(BOQ).filter(BOQ.project_id == project_id).all()
+    result = []
     for boq in boqs:
-        boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.id, parent_item_id=None).all()]
-        if boq.project:
-            boq.project_name = boq.project.name
-        else:
-            boq.project_name = "-"
-    return boqs
+        boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.boq_id, parent_item_id=None).all()]
+        boq_dict = boq.__dict__.copy()
+        boq_dict['project_name'] = project.name
+        boq_dict['boq_id'] = boq.boq_id
+        boq_dict['items'] = boq.items
+        result.append(boq_dict)
+    return result
 
-@router.get("/{project_id}/{boq_id}", response_model=BOQSchema)
-def get_boq_for_project(project_id: int, boq_id: int, db: Session = Depends(get_db)):
+@router.get("/{user_id}/{project_id}/{boq_id}", response_model=BOQSchema)
+def get_boq(user_id: int, project_id: int, boq_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     boq = db.query(BOQ).filter(BOQ.project_id == project_id, BOQ.id == boq_id).first()
     if not boq:
         raise HTTPException(status_code=404, detail="BOQ not found")
     boq.items = [build_boq_item(item) for item in db.query(BOQItem).filter_by(boq_id=boq.id, parent_item_id=None).all()]
     return boq
 
-@router.put("/{project_id}/{boq_id}", response_model=BOQSchema)
-def update_boq_for_project(project_id: int, boq_id: int, boq_update: BOQCreate, db: Session = Depends(get_db)):
+@router.put("/{user_id}/{project_id}/{boq_id}", response_model=BOQSchema)
+def update_boq(user_id: int, project_id: int, boq_id: int, boq_update: BOQCreate, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     boq = db.query(BOQ).filter(BOQ.project_id == project_id, BOQ.id == boq_id).first()
     if not boq:
         raise HTTPException(status_code=404, detail="BOQ not found")
@@ -136,8 +171,11 @@ def update_boq_for_project(project_id: int, boq_id: int, boq_update: BOQCreate, 
     db.refresh(boq)
     return boq
 
-@router.delete("/{project_id}/{boq_id}")
-def delete_boq_for_project(project_id: int, boq_id: int, db: Session = Depends(get_db)):
+@router.delete("/{user_id}/{project_id}/{boq_id}")
+def delete_boq(user_id: int, project_id: int, boq_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     boq = db.query(BOQ).filter(BOQ.project_id == project_id, BOQ.id == boq_id).first()
     if not boq:
         raise HTTPException(status_code=404, detail="BOQ not found")
@@ -145,8 +183,11 @@ def delete_boq_for_project(project_id: int, boq_id: int, db: Session = Depends(g
     db.commit()
     return {"detail": "BOQ deleted"}
 
-@router.delete("/{project_id}")
-def delete_all_boqs_for_project(project_id: int, db: Session = Depends(get_db)):
+@router.delete("/{user_id}/{project_id}")
+def delete_all_boqs_for_project(user_id: int, project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.project_id == project_id, Project.user_id == user_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found for user")
     boqs = db.query(BOQ).filter(BOQ.project_id == project_id).all()
     for boq in boqs:
         db.delete(boq)

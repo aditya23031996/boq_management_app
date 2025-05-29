@@ -11,22 +11,28 @@ function StatusBadge({ status }) {
   return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{status || 'N/A'}</span>;
 }
 
-export default function ProjectsTable({ onSelectProject }) {
+export default function ProjectsTable({ onSelectProject, user_id }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { token } = useAuth();
 
   useEffect(() => {
     setLoading(true);
-    apiFetch("/project/", {}, token)
-      .then(res => res.json())
-      .then(setProjects)
+    if (!user_id) return;
+    fetch(`/project/${user_id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch projects');
+        return res.json();
+      })
+      .then(data => {
+        setProjects(data);
+        setLoading(false);
+      })
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
-  }, [token]);
+  }, [user_id]);
 
   if (loading) return <div className="p-4 text-gray-500">Loading projects...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;

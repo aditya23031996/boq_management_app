@@ -1,14 +1,14 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import DashboardLayout from "../components3/DashboardLayout";
-import {
-  Bell,
-  FileText,
-  CreditCard,
-  BarChart3,
-  CheckSquare,
-  Settings,
+import { 
+  Bell, 
+  FileText, 
+  CreditCard, 
+  BarChart3, 
+  CheckSquare, 
+  Settings, 
   Folder,
   User,
   ArrowUp,
@@ -140,7 +140,7 @@ function SectionHeader({ children }) {
     <div className="flex items-center gap-2 mb-2 mt-2">
       <span className="inline-block w-1 h-5 rounded bg-[#154078]" />
       <h2 className="text-base font-semibold text-[#154078] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>{children}</h2>
-    </div>
+      </div>
   );
 }
 
@@ -155,9 +155,9 @@ function HeroSection({ username, company }) {
       <div className="flex flex-col gap-1">
         <h1 className="text-lg md:text-xl font-bold text-[#154078] mb-0.5">{greeting}, {username}!</h1>
         <p className="text-gray-600 text-sm">Welcome to <span className="font-semibold text-[#154078]">{company}</span>'s BOQ Dashboard.</p>
-      </div>
+                </div>
       <Link to="/project/create" className="mt-3 md:mt-0 px-4 py-1.5 rounded bg-[#154078] text-white font-semibold shadow hover:bg-[#1e3a8a] transition text-sm">+ Create New Project</Link>
-    </div>
+            </div>
   );
 }
 
@@ -172,8 +172,8 @@ function QuickActions() {
       </Link>
       <Link to="/reports" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
         <BarChart3 size={15} /> Reports
-      </Link>
-    </div>
+            </Link>
+          </div>
   );
 }
 
@@ -213,7 +213,7 @@ function RecentBoqsTable({ boqs }) {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
   );
 }
 
@@ -238,10 +238,10 @@ function NotificationCard({ notifications }) {
           ))
         )}
       </ul>
-    </div>
-  );
-}
-
+      </div>
+    );
+  }
+  
 function BillingTrendChart() {
   const [rollingPeriod, setRollingPeriod] = useState(3);
   const data = [
@@ -298,7 +298,7 @@ function BillingTrendChart() {
         <div className="flex items-center gap-2">
           <span className="text-xs">Rolling Avg:</span>
           {[3, 6, 12].map(period => (
-            <button
+                  <button
               key={period}
               onClick={() => setRollingPeriod(period)}
               className={`px-2 py-1 rounded-full text-xs border ${
@@ -308,13 +308,13 @@ function BillingTrendChart() {
               }`}
             >
               {period} mo
-            </button>
-          ))}
-        </div>
-      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
       <ResponsiveContainer width="100%" height={160}>
         <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-          <defs>
+                    <defs>
             <linearGradient id="gradientCompleted" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#154078" stopOpacity={0.85} />
               <stop offset="95%" stopColor="#154078" stopOpacity={0.3} />
@@ -322,8 +322,8 @@ function BillingTrendChart() {
             <linearGradient id="gradientInProgress" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#154078" stopOpacity={0.5} />
               <stop offset="95%" stopColor="#154078" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
+                      </linearGradient>
+                    </defs>
           <XAxis dataKey="month" stroke="#154078" tick={{ fontSize: 10 }} />
           <YAxis stroke="#154078" tick={{ fontSize: 10 }} />
           <Tooltip contentStyle={{ fontSize: "10px" }} />
@@ -332,12 +332,13 @@ function BillingTrendChart() {
           <Bar dataKey="inProgress" stackId="a" fill="url(#gradientInProgress)" barSize={12} />
           <Line dataKey="rollingAvg" stroke="#48bb78" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 3 }} />
         </ComposedChart>
-      </ResponsiveContainer>
-    </div>
+                </ResponsiveContainer>
+              </div>
   );
 }
 
 export default function Dashboard() {
+  const { user_id } = useParams();
   const { user, token } = useAuth();
   const [projects, setProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -345,16 +346,14 @@ export default function Dashboard() {
   const [managerFilter, setManagerFilter] = useState("All");
 
   useEffect(() => {
-    if (!user) return;
-    fetch(`/project/?user_id=${user.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    if (!user_id) return;
+    fetch(`/project/${user_id}`)
       .then(res => res.json())
       .then(setProjects);
-  }, [user, token]);
+  }, [user_id]);
 
   const filteredBoqs = projects.filter((bq) => {
-    const matchesSearch = bq.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (bq.name || "").toLowerCase().includes((searchQuery || "").toLowerCase());
     const matchesCategory = categoryFilter === "All" || bq.category === categoryFilter;
     const matchesManager = managerFilter === "All" || bq.manager === managerFilter;
     return matchesSearch && matchesCategory && matchesManager;
@@ -377,13 +376,13 @@ export default function Dashboard() {
           <KpiCard title="Billings In Progress" value={sampleKpis.billingsInProgress} icon="CreditCard" change={sampleKpis.billingsInProgressChange} />
           <KpiCard title="Balance to Bill" value={sampleKpis.balanceToBill} icon="BarChart3" change={sampleKpis.balanceChange} />
           <KpiCard title="Work Completed" value={`${sampleKpis.workCompleted}%`} icon="CheckSquare" change={sampleKpis.workCompletedChange} />
-        </div>
+              </div>
         {/* Charts Section */}
         <SectionHeader>Billing Overview</SectionHeader>
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <BillingTrendChart />
           <NotificationCard notifications={sampleNotifications} />
-        </div>
+                    </div>
         {/* Recent BoQs */}
         <SectionHeader>Recent BoQs</SectionHeader>
         <div className="mb-6 bg-white border border-gray-200 shadow-sm rounded-md">

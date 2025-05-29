@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PlusCircle } from "lucide-react";
+import { useAuth } from '../../../context/AuthContext.jsx';
 
 const initialForm = {
   name: "",
@@ -14,12 +15,14 @@ const initialForm = {
   description: "",
 };
 
-export default function AddProjectButton({ onProjectCreated }) {
+export default function AddProjectButton({ onProjectCreated, user_id: propUserId }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { user } = useAuth();
+  const user_id = propUserId || user?.user_id;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,9 +42,13 @@ export default function AddProjectButton({ onProjectCreated }) {
       setError("Project name and client name are required.");
       return;
     }
+    if (!user_id) {
+      setError("User ID is missing.");
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch("/project/", {
+      const res = await fetch(`/project/${user_id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

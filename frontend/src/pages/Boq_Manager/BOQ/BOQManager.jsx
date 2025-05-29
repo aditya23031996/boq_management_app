@@ -1,22 +1,14 @@
-import React, { useState } from "react";
-import ProjectsTable from "../components3/ProjectsTable";
+import React from "react";
+import { useParams } from "react-router-dom";
 import BOQTable from "../components3/BOQTable";
-import BOQDetail from "../components3/BOQDetail";
+import DashboardLayout from "../components3/DashboardLayout";
 
 export default function BOQManager() {
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedBoq, setSelectedBoq] = useState(null);
+  const { user_id } = useParams();
 
-  if (!selectedProject) {
-    return <ProjectsTable onSelectProject={setSelectedProject} />;
-  }
-  if (!selectedBoq) {
-    return (
-      <BOQTable
-        project={selectedProject}
-        onSelectBoq={setSelectedBoq}
-      />
-    );
-  }
-  return <BOQDetail boq={selectedBoq} />;
+  return (
+    <DashboardLayout>
+      <BOQTable user_id={user_id} />
+    </DashboardLayout>
+  );
 } 

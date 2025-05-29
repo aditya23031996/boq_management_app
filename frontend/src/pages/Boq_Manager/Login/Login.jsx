@@ -19,7 +19,7 @@ export default function Login() {
       const { token, user } = await loginUser(email, password);
       login(token, user);
       toast.success('Login successful! 🎉');
-      navigate("/dashboard");
+      navigate(`/${user.user_id}/dashboard`);
     } catch (err) {
       setError(err.message);
       toast.error(err.message || 'Login failed! ❌');

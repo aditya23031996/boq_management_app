@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       '/project': 'http://localhost:8000', // <-- FastAPI backend URL
       '/boq': 'http://localhost:8000',
+      '/user': 'http://localhost:8000',
     },
   },
 })

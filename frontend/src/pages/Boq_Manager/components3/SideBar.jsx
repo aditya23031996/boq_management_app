@@ -1,6 +1,7 @@
 // Sidebar.jsx
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext.jsx';
 import {
   LayoutDashboard,
   Folder,
@@ -13,18 +14,24 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const navItems = [
-  { label: 'Home', to: '/dashboard', icon: <LayoutDashboard size={18} /> },
-  { label: 'Projects', to: '/projects', icon: <Folder size={18} /> },
-  { label: 'Bill of Quantities', to: '/boq', icon: <FileText size={18} /> },
-  { label: 'Invoices', to: '/invoices', icon: <Receipt size={18} /> },
-  { label: 'Reports', to: '/reports', icon: <BarChart3 size={18} /> },
-  { label: 'Team', to: '/team', icon: <Users size={18} /> },
-  { label: 'Settings', to: '/settings', icon: <Settings size={18} /> },
-];
-
 export default function Sidebar({ collapsed, toggleSidebar }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const params = useParams();
+  // Prefer user from context, fallback to params
+  const user_id = user?.user_id || params.user_id;
+
+  // Dynamically build nav items with user_id in URLs
+  const navItems = [
+    { label: 'Home', to: user_id ? `/${user_id}/dashboard` : '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { label: 'Projects', to: user_id ? `/${user_id}/projects` : '/projects', icon: <Folder size={18} /> },
+    { label: 'Bill of Quantities', to: user_id ? `/${user_id}/bill_of_quantities` : '/boq', icon: <FileText size={18} /> },
+    { label: 'Invoices', to: '/invoices', icon: <Receipt size={18} /> },
+    { label: 'Reports', to: '/reports', icon: <BarChart3 size={18} /> },
+    { label: 'Team', to: '/team', icon: <Users size={18} /> },
+    { label: 'Settings', to: '/settings', icon: <Settings size={18} /> },
+  ];
+
   const isActive = (path) => location.pathname === path;
 
   return (

@@ -1,0 +1,25 @@
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : [{"project_id":24,"title":"Core Module Development","description":"Development of core 
+                    booking and payment modules for the Property Rental 
+                    App.","billing_completed":"50","work_completed":"40","boq_id"...
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 1277
+                    Content-Type: application/json
+                    Date: Tue, 27 May 2025 15:11:38 GMT
+                    Server: uvicorn
+                    
+                    [{"project_id":24,"title":"Core Module Development","description":"Develo...
+Forms             : {}
+Headers           : {[Content-Length, 1277], [Content-Type, application/json], [Date, Tue, 27 May 2025 
+                    15:11:38 GMT], [Server, uvicorn]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 1277
+
+
+

@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from "react";
 
-export default function BOQTable({ project, onSelectBoq }) {
+export default function BOQTable({ project, onSelectBoq, user_id }) {
   const [boqs, setBoqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!project) return;
     setLoading(true);
-    fetch(`/boq/?project_id=${project.id}`)
+    let url = null;
+    if (project) {
+      url = `/boq/?project_id=${project.id}`;
+    } else if (user_id) {
+      url = `/boq/${user_id}`;
+    }
+    if (!url) {
+      setBoqs([]);
+      setLoading(false);
+      return;
+    }
+    fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch BOQs");
         return res.json();
@@ -21,7 +31,7 @@ export default function BOQTable({ project, onSelectBoq }) {
         setError(err.message);
         setLoading(false);
       });
-  }, [project]);
+  }, [project, user_id]);
 
   if (loading) return <div className="p-4 text-gray-500">Loading BOQs...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -45,8 +55,8 @@ export default function BOQTable({ project, onSelectBoq }) {
           {boqs.length === 0 ? (
             <tr><td colSpan={8} className="px-3 py-4 text-center text-gray-500">No BOQs found.</td></tr>
           ) : boqs.map((boq) => (
-            <tr key={boq.id} className="border-b hover:bg-blue-50 transition">
-              <td className="px-3 py-2">{boq.id}</td>
+            <tr key={boq.boq_id} className="border-b hover:bg-blue-50 transition">
+              <td className="px-3 py-2">{boq.boq_id}</td>
               <td className="px-3 py-2 font-medium text-[#154078]">{boq.title}</td>
               <td className="px-3 py-2">{boq.description || '-'}</td>
               <td className="px-3 py-2">{boq.project_name || '-'}</td>
@@ -54,12 +64,14 @@ export default function BOQTable({ project, onSelectBoq }) {
               <td className="px-3 py-2">{boq.billing_completed || ''}</td>
               <td className="px-3 py-2">{boq.work_completed || ''}</td>
               <td className="px-3 py-2">
-                <button
-                  className="text-blue-600 hover:underline font-semibold text-xs"
-                  onClick={() => onSelectBoq(boq)}
-                >
-                  View
-                </button>
+                {onSelectBoq && (
+                  <button
+                    className="text-blue-600 hover:underline font-semibold text-xs"
+                    onClick={() => onSelectBoq(boq)}
+                  >
+                    View
+                  </button>
+                )}
               </td>
             </tr>
           ))}

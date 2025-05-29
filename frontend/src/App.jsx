@@ -18,12 +18,12 @@ function App() {
         
         <Routes>
           <Route path="/" element={<Homepage />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects" element={<Projects />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/:user_id/dashboard" element={<Dashboard />} />
+          <Route path="/:user_id/projects" element={<Projects />} />
+          <Route path="/:user_id/bill_of_quantities" element={<BOQManager />} />
           <Route path="/boq" element={<BOQ />} />
-          <Route path="/boq-manager" element={<BOQManager />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

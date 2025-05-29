@@ -52,10 +52,10 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not bcrypt.verify(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
     # Create JWT token
-    token_data = {"sub": str(db_user.id)}
+    token_data = {"sub": str(db_user.user_id)}
     token = jwt.encode(token_data, SECRET_KEY, algorithm="HS256")
     return {"token": token, "user": {
-        "id": db_user.id,
+        "user_id": db_user.user_id,
         "email": db_user.email,
         "first_name": db_user.first_name,
         "last_name": db_user.last_name,

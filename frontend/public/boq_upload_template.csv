@@ -1,0 +1,4 @@
+Category,SubCategory,Item,ItemID,Description,Unit,Quantity,Rate,Status
+Civil,Earthwork,Excavation,1,Excavation in soil,CUM,100,150,Not Started
+Civil,Earthwork,Backfilling,2,Backfilling with selected soil,CUM,80,120,Not Started
+Electrical,Wiring,Concealed Wiring,3,Concealed wiring for lighting,RM,200,50,Not Started

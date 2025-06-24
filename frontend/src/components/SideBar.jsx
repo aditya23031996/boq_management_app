@@ -28,16 +28,12 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
 
   return (
     <aside
-      className={`fixed top-0 bottom-0 left-0 flex flex-col bg-[#10192A] text-white transition-all duration-300 shadow-lg z-30 ${
-        collapsed ? 'w-12' : 'w-48'
-      }`}
+      className={`fixed top-0 bottom-0 left-0 flex flex-col bg-[#10192A] text-white transition-all duration-300 shadow-lg z-30 ${collapsed ? 'w-12' : 'w-48'}`}
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       {/* Brand */}
       <div className={`flex items-center justify-center h-14 border-b border-[#1E293B] ${collapsed ? 'px-0' : 'px-3'}`}>
-        {!collapsed && (
-          <span className="text-lg font-bold tracking-tight text-white">BOQ Manager</span>
-        )}
+        {!collapsed && <span className="text-lg font-bold tracking-tight text-white">BOQ Manager</span>}
       </div>
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 space-y-1">
@@ -45,22 +41,10 @@ export default function Sidebar({ collapsed, toggleSidebar }) {
           <Link
             key={to}
             to={to}
-            className={`group flex items-center px-2 py-2 rounded-md relative transition-colors duration-200 font-medium text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              collapsed ? 'justify-center' : 'gap-3'
-            } ${isActive(to) ? 'bg-[#1E293B]' : 'hover:bg-[#172136]'} ${isActive(to) ? 'text-blue-400' : 'text-gray-200'}`}
-            style={{ fontFamily: 'Inter, sans-serif' }}
-            tabIndex={0}
+            className={`group flex items-center px-2 py-2 rounded-md relative transition-colors duration-200 font-medium text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${collapsed ? 'justify-center' : 'gap-3'} ${isActive(to) ? 'bg-[#1E293B] text-blue-400' : 'hover:bg-[#172136] text-gray-200'}`}
           >
-            {/* Active/hover indicator */}
-            <span
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded bg-blue-500 transition-all ${
-                isActive(to) ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'
-              }`}
-            />
             <span className={`transition group-hover:text-blue-400 ${isActive(to) ? 'text-blue-400' : 'text-gray-400'}`}>{icon}</span>
-            {!collapsed && (
-              <span className={`text-sm font-medium transition group-hover:text-blue-400 ${isActive(to) ? 'text-blue-400' : 'text-gray-200'}`}>{label}</span>
-            )}
+            {!collapsed && <span className={`text-sm font-medium transition group-hover:text-blue-400 ${isActive(to) ? 'text-blue-400' : 'text-gray-200'}`}>{label}</span>}
           </Link>
         ))}
       </nav>

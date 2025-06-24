@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+import pandas as pd
+from app.services import boq_services
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.boq import BOQ, BOQItem
@@ -10,6 +12,58 @@ router = APIRouter(
     prefix="/boq",
     tags=["BOQ"]
 )
+
+# --- Excel Upload Endpoint ---
+@router.post("/upload_excel/{user_id}")
+async def upload_boq_excel(user_id: int, file: UploadFile = File(...)):
+    # Save uploaded file to a temp location
+    import tempfile
+    import os
+    suffix = os.path.splitext(file.filename)[-1]
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(await file.read())
+        tmp_path = tmp.name
+    # Read Excel file
+    try:
+        if tmp_path.endswith('.csv'):
+            df = pd.read_csv(tmp_path)
+        else:
+            df = pd.read_excel(tmp_path)
+    except Exception as e:
+        os.remove(tmp_path)
+        raise HTTPException(status_code=400, detail=f"Invalid file: {e}. Columns found: {getattr(df, 'columns', None)}")
+    os.remove(tmp_path)
+    # Debug: print columns
+    print("[BOQ UPLOAD] Columns in uploaded file:", df.columns.tolist())
+    # --- Map DataFrame to BOQ schema ---
+    categories = {}
+    for _, row in df.iterrows():
+        cat = row.get('Category')
+        subcat = row.get('SubCategory')
+        item = row.get('Item')
+        if not cat or not subcat or not item:
+            continue
+        if cat not in categories:
+            categories[cat] = {"categoryId": cat, "categoryName": cat, "projectId": str(user_id), "subCategories": {}}
+        if subcat not in categories[cat]["subCategories"]:
+            categories[cat]["subCategories"][subcat] = {"subCategoryId": subcat, "subCategoryName": subcat, "items": []}
+        categories[cat]["subCategories"][subcat]["items"].append({
+            "itemId": str(row.get('ItemID', item)),
+            "description": row.get('Description', ''),
+            "unit": row.get('Unit', ''),
+            "quantity": float(row.get('Quantity', 0)),
+            "rate": float(row.get('Rate', 0)),
+            "breakups": [],
+            "subItems": [],
+            "status": row.get('Status', 'Not Started')
+        })
+    # Convert nested dicts to lists
+    category_list = []
+    for cat in categories.values():
+        cat["subCategories"] = list(cat["subCategories"].values())
+        category_list.append(cat)
+    boq_services.save_boq_data(category_list)
+    return {"message": "BOQ file uploaded and saved successfully"}
 
 def create_boq_item(db: Session, boq_id: int, item_data: BOQItemCreate, parent_item: Optional[BOQ] = None):
     db_item = BOQ(

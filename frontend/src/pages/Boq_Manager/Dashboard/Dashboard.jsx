@@ -1,7 +1,6 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import DashboardLayout from "../components3/DashboardLayout";
 import { 
   Bell, 
   FileText, 
@@ -14,6 +13,7 @@ import {
   ArrowUp,
   ArrowDown,
   PlusCircle,
+  Download,
 } from "lucide-react";
 import {
   BarChart,
@@ -27,8 +27,18 @@ import {
   Line,
   Legend,
   ComposedChart,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  ReferenceLine,
+  PieChart,
+  Pie,
+  LabelList,
 } from "recharts";
+import { LineChart as ReLineChart, Line as ReLine, ResponsiveContainer as ReResponsiveContainer } from 'recharts';
 import { useAuth } from "/src/context/AuthContext.jsx";
+import ProjectStatusPie from '../components3/ProjectStatusPie';
+import DashboardLayout from "../components3/DashboardLayout";
 
 // Sample KPI data
 const sampleKpis = {
@@ -46,70 +56,36 @@ const sampleKpis = {
   workCompletedChange: 5,
 };
 
-const sampleBillingTrend = [
-  { month: "Jan", amount: 200000, forecast: false },
-  { month: "Feb", amount: 180000, forecast: false },
-  { month: "Mar", amount: 215000, forecast: false },
-  { month: "Apr", amount: 240000, forecast: false },
-  { month: "May", amount: 195000, forecast: false },
-  { month: "Jun", amount: 220000, forecast: false },
-  { month: "Jul", amount: 230000, forecast: true },
-  { month: "Aug", amount: 210000, forecast: true },
-  { month: "Sep", amount: 225000, forecast: true },
-  { month: "Oct", amount: 235000, forecast: true },
-  { month: "Nov", amount: 205000, forecast: true },
-  { month: "Dec", amount: 240000, forecast: true },
-];
-
-const sampleProjectStatusTrend = [
-  { phase: "Planning", inProgress: 5, completed: 15 },
-  { phase: "Execution", inProgress: 8, completed: 12 },
-  { phase: "Review", inProgress: 4, completed: 16 },
-];
-
-const sampleRecentBoqs = [
-  {
-    id: "1",
-    projectName: "City Mall Expansion",
-    createdAt: "2025-04-10",
-    scope: "1500 items",
-    billings: "₹900,000",
-    status: "In Progress",
-    category: "Infrastructure",
-    manager: "Alice",
-  },
-  {
-    id: "2",
-    projectName: "Airport Terminal Upgrade",
-    createdAt: "2025-04-05",
-    scope: "1800 items",
-    billings: "₹1,080,000",
-    status: "Completed",
-    category: "Transportation",
-    manager: "Bob",
-  },
-  {
-    id: "3",
-    projectName: "Highway Maintenance",
-    createdAt: "2025-03-28",
-    scope: "1200 items",
-    billings: "₹600,000",
-    status: "In Progress",
-    category: "Infrastructure",
-    manager: "Alice",
-  },
-];
-
 const sampleNotifications = [
   { id: 1, message: "New BoQ uploaded: City Mall Expansion" },
   { id: 2, message: "Invoice generated for Airport Terminal Upgrade" },
   { id: 3, message: "50% work milestone reached for Highway Maintenance" },
 ];
 
-const allCategories = ["All", "Infrastructure", "Transportation", "Energy", "Utilities"];
-const allManagers   = ["All", "Alice", "Bob", "Charlie"];
+// AnimatedCounter: animates numbers from 0 to value
+function AnimatedCounter({ value, duration = 1000, format = v => v, className = "" }) {
+  const [display, setDisplay] = React.useState(0);
+  React.useEffect(() => {
+    let start = 0;
+    let end = typeof value === 'number' ? value : parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+    if (isNaN(end)) {
+      setDisplay(value);
+      return;
+    }
+    let startTime = null;
+    function animate(ts) {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      setDisplay(Math.floor(progress * (end - start) + start));
+      if (progress < 1) requestAnimationFrame(animate);
+    }
+    animate(performance.now());
+    // eslint-disable-next-line
+  }, [value]);
+  return <span className={className}>{format(display)}</span>;
+}
 
-function KpiCard({ title, value, icon, change }) {
+function KpiCard({ title, value, icon, change, tooltip }) {
   const icons = { FileText, CreditCard, BarChart3, CheckSquare, Folder };
   const IconComponent = icons[icon] || FileText;
   let changeIcon = null;
@@ -121,15 +97,35 @@ function KpiCard({ title, value, icon, change }) {
     changeIcon = <ArrowDown size={14} className="text-red-600 inline-block" />;
     changeColor = "text-red-600";
   }
+  // Format for currency or percent
+  let format = v => v;
+  if (typeof value === 'string' && value.startsWith('₹')) {
+    format = v => `₹${v.toLocaleString()}`;
+  } else if (typeof value === 'string' && value.endsWith('%')) {
+    format = v => `${v}%`;
+  } else if (typeof value === 'number') {
+    format = v => v.toLocaleString();
+  }
   return (
-    <div className="bg-white border border-gray-200 rounded-md p-3 flex flex-col items-start shadow-sm min-w-[110px]" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <div className="p-1 bg-gray-100 rounded mb-1">
-        <IconComponent size={18} className="text-[#154078]" />
+    <div
+      className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-start shadow-md min-w-[120px] transition-transform duration-200 hover:scale-105 hover:shadow-xl relative group"
+      style={{ fontFamily: 'Inter, sans-serif', cursor: tooltip ? 'pointer' : 'default' }}
+      tabIndex={tooltip ? 0 : -1}
+    >
+      <div className="p-1.5 bg-gray-100 rounded mb-2">
+        <IconComponent size={20} className="text-[#154078]" />
       </div>
-      <div className="text-lg font-bold text-[#154078] leading-tight">{value}</div>
-      <div className="text-xs text-gray-500 mb-0.5 font-medium leading-tight">{title}</div>
+      <div className="text-xl font-extrabold text-[#154078] leading-tight">
+        <AnimatedCounter value={value} format={format} className="text-xl font-extrabold" />
+      </div>
+      <div className="text-sm text-gray-500 mb-1 font-normal leading-tight">{title}</div>
       {change !== undefined && (
         <div className={`text-xs ${changeColor} flex items-center`}>{changeIcon}<span className="ml-1">{Math.abs(change)}%</span></div>
+      )}
+      {tooltip && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-max max-w-xs px-3 py-2 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 group-focus:opacity-100 pointer-events-none z-20 shadow-lg transition-opacity duration-200">
+          {tooltip}
+        </div>
       )}
     </div>
   );
@@ -138,9 +134,9 @@ function KpiCard({ title, value, icon, change }) {
 function SectionHeader({ children }) {
   return (
     <div className="flex items-center gap-2 mb-2 mt-2">
-      <span className="inline-block w-1 h-5 rounded bg-[#154078]" />
-      <h2 className="text-base font-semibold text-[#154078] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>{children}</h2>
-      </div>
+      <span className="inline-block w-1 h-5 rounded bg-[#264653]" />
+      <h2 className="text-base font-medium text-[#264653] tracking-tight" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif' }}>{children}</h2>
+    </div>
   );
 }
 
@@ -151,99 +147,25 @@ function HeroSection({ username, company }) {
   if (hour < 12) greeting = "Good morning";
   else if (hour < 18) greeting = "Good afternoon";
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between bg-white border border-gray-200 rounded-md p-4 mb-4 shadow-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="flex flex-col md:flex-row items-center justify-between bg-white border border-gray-200 rounded-md p-4 mb-4 shadow-sm font-inter">
       <div className="flex flex-col gap-1">
-        <h1 className="text-lg md:text-xl font-bold text-[#154078] mb-0.5">{greeting}, {username}!</h1>
-        <p className="text-gray-600 text-sm">Welcome to <span className="font-semibold text-[#154078]">{company}</span>'s BOQ Dashboard.</p>
-                </div>
-      <Link to="/project/create" className="mt-3 md:mt-0 px-4 py-1.5 rounded bg-[#154078] text-white font-semibold shadow hover:bg-[#1e3a8a] transition text-sm">+ Create New Project</Link>
-            </div>
-  );
-}
-
-function QuickActions() {
-  return (
-    <div className="flex flex-wrap gap-3 mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <Link to="/project/create" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
-        <PlusCircle size={15} /> New Project
+        <h1 className="text-base font-medium text-[#154078] mb-0.5">
+          {greeting}, {username}!
+        </h1>
+        <p className="text-sm text-gray-600">
+          Welcome to <span className="font-medium text-[#154078]">{company}</span>'s BOQ Dashboard.
+        </p>
+      </div>
+      <Link to="/project/create" className="mt-3 md:mt-0 px-4 py-1.5 rounded bg-[#154078] text-white font-medium shadow hover:bg-[#1e3a8a] transition text-sm">
+        + Create New Project
       </Link>
-      <Link to="/builder" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
-        <FileText size={15} /> New BoQ
-      </Link>
-      <Link to="/reports" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded text-[#154078] font-semibold hover:bg-blue-100 transition text-sm">
-        <BarChart3 size={15} /> Reports
-            </Link>
-          </div>
+    </div>
   );
 }
 
-function StatusBadge({ status }) {
-  const color = status === "Completed" ? "bg-green-100 text-green-700" : status === "In Progress" ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700";
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{status}</span>;
-}
-
-function RecentBoqsTable({ boqs }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-left text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th className="px-3 py-2 font-semibold text-gray-700">Project</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Created</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Scope</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Billing</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Status</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Manager</th>
-            <th className="px-3 py-2 font-semibold text-gray-700">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {boqs.map((bq) => (
-            <tr key={bq.id} className="border-b hover:bg-gray-50 transition">
-              <td className="px-3 py-2 font-medium text-[#154078]">{bq.projectName}</td>
-              <td className="px-3 py-2">{bq.createdAt}</td>
-              <td className="px-3 py-2">{bq.scope}</td>
-              <td className="px-3 py-2">{bq.billings}</td>
-              <td className="px-3 py-2"><StatusBadge status={bq.status} /></td>
-              <td className="px-3 py-2">{bq.manager}</td>
-              <td className="px-3 py-2">
-                <Link to={`/boq/${bq.id}`} className="text-[#154078] hover:underline font-semibold">View</Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      </div>
-  );
-}
-
-function NotificationCard({ notifications }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-[#154078] flex items-center gap-2">
-          <Bell size={14} /> Notifications
-        </h2>
-        <button className="text-xs text-blue-600 hover:underline">Clear All</button>
-      </div>
-      <ul className="space-y-1 max-h-48 overflow-y-auto">
-        {notifications.length === 0 ? (
-          <li className="text-gray-500 text-center">No new notifications.</li>
-        ) : (
-          notifications.map((n) => (
-            <li key={n.id} className="flex items-center gap-1.5 p-1 bg-gray-50 rounded">
-              <Bell size={12} className="text-blue-600" />
-              <span className="text-gray-700 text-xs">{n.message}</span>
-            </li>
-          ))
-        )}
-      </ul>
-      </div>
-    );
-  }
-  
+// BillingTrendChart component
 function BillingTrendChart() {
-  const [rollingPeriod, setRollingPeriod] = useState(3);
+  // Simulated data for 12 months
   const data = [
     { month: "Jan", completed: 150000, inProgress: 50000 },
     { month: "Feb", completed: 130000, inProgress: 50000 },
@@ -258,140 +180,189 @@ function BillingTrendChart() {
     { month: "Nov", completed: 170000, inProgress: 35000 },
     { month: "Dec", completed: 210000, inProgress: 30000 },
   ];
-  const dataWithTotal = data.map(item => ({
-    ...item,
-    total: item.completed + item.inProgress,
-  }));
-  function computeRollingAverage(dataArr, period) {
-    const result = [];
-    for (let i = 0; i < dataArr.length; i++) {
-      if (i < period - 1) {
-        result.push(null);
-      } else {
-        let sum = 0;
-        for (let j = i - period + 1; j <= i; j++) {
-          sum += dataArr[j].total;
-        }
-        result.push(sum / period);
-      }
-    }
-    return result;
-  }
-  const rollingAvg = computeRollingAverage(dataWithTotal, rollingPeriod);
-  const forecastMonths = ["Jan*", "Feb*", "Mar*"];
-  const lastRolling = rollingAvg.slice().reverse().find(val => val !== null) || 0;
-  const forecastData = forecastMonths.map(m => ({
-    month: m,
-    completed: null,
-    inProgress: null,
-    total: null,
-    rollingAvg: lastRolling,
-  }));
-  const chartData = [
-    ...dataWithTotal.map((d, i) => ({ ...d, rollingAvg: rollingAvg[i] })),
-    ...forecastData,
-  ];
+  // Find current month index
+  const now = new Date();
+  const currentMonthIdx = now.getMonth();
+  const currentMonth = data[currentMonthIdx]?.month;
   return (
-    <div className="bg-white border border-gray-200 rounded-md shadow-sm p-3 text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs mb-2 font-semibold text-gray-700">Billing Trend (12 mo)</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs">Rolling Avg:</span>
-          {[3, 6, 12].map(period => (
-                  <button
-              key={period}
-              onClick={() => setRollingPeriod(period)}
-              className={`px-2 py-1 rounded-full text-xs border ${
-                rollingPeriod === period
-                  ? "bg-[#154078] text-white border-[#154078]"
-                  : "bg-gray-100 text-gray-800 border-gray-200"
-              }`}
-            >
-              {period} mo
-                    </button>
-                  ))}
-                </div>
-              </div>
-      <ResponsiveContainer width="100%" height={160}>
-        <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                    <defs>
-            <linearGradient id="gradientCompleted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#154078" stopOpacity={0.85} />
-              <stop offset="95%" stopColor="#154078" stopOpacity={0.3} />
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <h2 className="text-base font-medium text-[#154078] mb-1">Billing Trend</h2>
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#154078" stopOpacity={0.7}/>
+              <stop offset="95%" stopColor="#154078" stopOpacity={0.1}/>
             </linearGradient>
-            <linearGradient id="gradientInProgress" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#154078" stopOpacity={0.5} />
-              <stop offset="95%" stopColor="#154078" stopOpacity={0.1} />
-                      </linearGradient>
-                    </defs>
-          <XAxis dataKey="month" stroke="#154078" tick={{ fontSize: 10 }} />
-          <YAxis stroke="#154078" tick={{ fontSize: 10 }} />
-          <Tooltip contentStyle={{ fontSize: "10px" }} />
-          <Legend verticalAlign="top" wrapperStyle={{ fontSize: "10px", color: "#154078" }} />
-          <Bar dataKey="completed" stackId="a" fill="url(#gradientCompleted)" barSize={12} />
-          <Bar dataKey="inProgress" stackId="a" fill="url(#gradientInProgress)" barSize={12} />
-          <Line dataKey="rollingAvg" stroke="#48bb78" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 3 }} />
-        </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+            <linearGradient id="colorInProgress" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#48bb78" stopOpacity={0.5}/>
+              <stop offset="95%" stopColor="#48bb78" stopOpacity={0.05}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+          <XAxis dataKey="month" stroke="#154078" tick={{ fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+          <YAxis stroke="#154078" tick={{ fontSize: 13, fontFamily: 'Inter, sans-serif' }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+          <Tooltip contentStyle={{ fontSize: "13px", fontFamily: 'Inter, sans-serif' }} formatter={v => `₹${v.toLocaleString()}`}/>
+          <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+          <Area type="monotone" dataKey="completed" name="Completed" stroke="#154078" fillOpacity={1} fill="url(#colorCompleted)" strokeWidth={3} />
+          <Area type="monotone" dataKey="inProgress" name="In Progress" stroke="#48bb78" fillOpacity={1} fill="url(#colorInProgress)" strokeWidth={3} />
+          {currentMonth && (
+            <ReferenceLine x={currentMonth} stroke="#fbbf24" strokeDasharray="4 2" label={{ value: 'This Month', position: 'top', fill: '#fbbf24', fontSize: 12, fontFamily: 'Inter, sans-serif' }} />
+          )}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// NotificationDropdown component
+function NotificationDropdown({ notifications }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="relative">
+      <button
+        className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Notifications"
+        style={{ fontFamily: 'Inter, sans-serif' }}
+      >
+        <Bell size={20} className="text-[#154078]" />
+        {notifications.length > 0 && (
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <div className="p-3 border-b font-normal text-[#154078]">Notifications</div>
+          <ul className="max-h-60 overflow-y-auto divide-y divide-gray-100">
+            {notifications.length === 0 ? (
+              <li className="p-3 text-gray-500 text-center">No new notifications.</li>
+            ) : notifications.map((n) => (
+              <li key={n.id} className="p-3 text-gray-700">{n.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ProfileDropdown component
+function ProfileDropdown({ user }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="relative">
+      <button
+        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition"
+        onClick={() => setOpen((o) => !o)}
+        style={{ fontFamily: 'Inter, sans-serif' }}
+      >
+        <User size={18} className="text-[#154078]" />
+        <span className="font-normal text-[#154078] text-sm">{user?.name || 'Profile'}</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <div className="p-3 border-b text-[#154078] font-normal">{user?.name || 'User'}</div>
+          <ul>
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Settings</li>
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Logout</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Floating Quick Action Button
+function FloatingQuickAction() {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <button
+        className="fixed z-50 bottom-8 right-8 bg-[#154078] hover:bg-blue-900 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-3xl transition-all duration-200"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Quick Actions"
+        style={{ fontFamily: 'Inter, sans-serif' }}
+      >
+        +
+      </button>
+      {open && (
+        <div className="fixed z-50 bottom-28 right-8 bg-white border border-gray-200 rounded-xl shadow-xl p-4 flex flex-col gap-3 min-w-[180px] animate-fade-in" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-[#154078] font-normal" onClick={() => { window.location.href = '/project/create'; }}><Folder size={16}/> New Project</button>
+          <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-[#154078] font-normal" onClick={() => { window.location.href = '/builder'; }}><FileText size={16}/> New BoQ</button>
+        </div>
+      )}
+    </>
   );
 }
 
 export default function Dashboard() {
   const { user_id } = useParams();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [managerFilter, setManagerFilter] = useState("All");
+  const [boqs, setBoqs] = useState([]);
+  const [userName, setUserName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+// Calculate total scope from all projects
+  const totalScope = projects.reduce((sum, p) => sum + (Number(p.total_scope) || 0), 0);
 
   useEffect(() => {
     if (!user_id) return;
     fetch(`/project/${user_id}`)
       .then(res => res.json())
       .then(setProjects);
+    fetch(`/boq/${user_id}`)
+      .then(res => res.json())
+      .then(setBoqs);
+    fetch(`/user/${user_id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          const name = (data.first_name || "") + (data.last_name ? (" " + data.last_name) : "");
+          setUserName(name.trim() || "User");
+          setCompanyName(data.company_name || "");
+        } else {
+          setUserName("User");
+        }
+      })
+      .catch(() => setUserName("User"));
   }, [user_id]);
-
-  const filteredBoqs = projects.filter((bq) => {
-    const matchesSearch = (bq.name || "").toLowerCase().includes((searchQuery || "").toLowerCase());
-    const matchesCategory = categoryFilter === "All" || bq.category === categoryFilter;
-    const matchesManager = managerFilter === "All" || bq.manager === managerFilter;
-    return matchesSearch && matchesCategory && matchesManager;
-  });
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 py-6 transition-all duration-300" style={{ fontFamily: 'Inter, sans-serif', background: '#f7f8fa', minHeight: '100vh' }}>
-        {/* Hero Section */}
-        <HeroSection username={user?.name} company={user?.company} />
-        {/* Quick Actions */}
-        <QuickActions />
+      <div className="px-4 py-6 transition-all duration-300" 
+      style={{ fontFamily: "Inter, sans-serif" }}>
+        
+        {/* Top Bar: Notification Bell & Profile Dropdown */}
+        <div className="flex items-center justify-end gap-4 mb-4">
+          <NotificationDropdown notifications={sampleNotifications} />
+          <ProfileDropdown user={user} />
+        </div>
+
+        {/* Welcome Banner */}
+        <HeroSection username={userName} company={companyName} />
+
         {/* KPI Grid */}
         <SectionHeader>Key Metrics</SectionHeader>
-        <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          <KpiCard title="Total Projects" value={projects.length} icon="Folder" change={sampleKpis.projectsChange} />
-          <KpiCard title="Total BoQs" value={projects.length} icon="FileText" change={sampleKpis.boqsChange} />
-          <KpiCard title="Total Scope" value={sampleKpis.totalScope} icon="FileText" change={sampleKpis.scopeChange} />
-          <KpiCard title="Billings Completed" value={sampleKpis.billingsCompleted} icon="CreditCard" change={sampleKpis.billingsCompletedChange} />
-          <KpiCard title="Billings In Progress" value={sampleKpis.billingsInProgress} icon="CreditCard" change={sampleKpis.billingsInProgressChange} />
-          <KpiCard title="Balance to Bill" value={sampleKpis.balanceToBill} icon="BarChart3" change={sampleKpis.balanceChange} />
-          <KpiCard title="Work Completed" value={`${sampleKpis.workCompleted}%`} icon="CheckSquare" change={sampleKpis.workCompletedChange} />
-              </div>
-        {/* Charts Section */}
-        <SectionHeader>Billing Overview</SectionHeader>
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BillingTrendChart />
-          <NotificationCard notifications={sampleNotifications} />
-                    </div>
-        {/* Recent BoQs */}
-        <SectionHeader>Recent BoQs</SectionHeader>
-        <div className="mb-6 bg-white border border-gray-200 shadow-sm rounded-md">
-          <div className="flex items-center justify-between p-3 border-b">
-            <h2 className="text-sm font-semibold text-[#154078]">Recent BoQs</h2>
-            <Link to="/builder" className="text-[#154078] font-semibold flex items-center gap-1 text-sm"><PlusCircle size={15}/> New BoQ</Link>
-          </div>
-          <RecentBoqsTable boqs={filteredBoqs} />
+        <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-5">
+          <KpiCard title="Total Projects" value={projects.length} icon="Folder" change={sampleKpis.projectsChange} tooltip="Total number of projects you are managing." />
+          <KpiCard title="Total BoQs" value={boqs.length} icon="FileText" change={sampleKpis.boqsChange} tooltip="Total Bill of Quantities across all projects." />
+          <KpiCard title="Total Scope" value={totalScope} icon="FileText" change={sampleKpis.scopeChange} tooltip="Sum of all project scopes." />
+          <KpiCard title="Billings Completed" value={sampleKpis.billingsCompleted} icon="CreditCard" change={sampleKpis.billingsCompletedChange} tooltip="Total value of completed billings." />
+          <KpiCard title="Billings In Progress" value={sampleKpis.billingsInProgress} icon="CreditCard" change={sampleKpis.billingsInProgressChange} tooltip="Current value of billings in progress." />
+          <KpiCard title="Balance to Bill" value={sampleKpis.balanceToBill} icon="BarChart3" change={sampleKpis.balanceChange} tooltip="Remaining value to be billed." />
+          <KpiCard title="Work Completed" value={`${sampleKpis.workCompleted}%`} icon="CheckSquare" change={sampleKpis.workCompletedChange} tooltip="Overall work completion percentage." />
         </div>
+
+        {/* Modern Data Visualizations */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProjectStatusPie projects={projects} />
+          <BillingTrendChart />
+        </div>
+
+        {/* Floating Quick Action Button */}
+        <FloatingQuickAction />
+        
       </div>
     </DashboardLayout>
   );

@@ -10,7 +10,7 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Dheeradi Projects</h3>
           <p className="text-sm">
-            Empowering your strategic projects with innovative management solutions since 2010.
+            Empowering your strategic projects with innovative management solutions since 2014.
           </p>
         </div>
 
@@ -41,8 +41,8 @@ export default function Footer() {
           <h4 className="text-md font-semibold text-white mb-4">Contact</h4>
           <ul className="space-y-2 text-sm">
             <li>Phone: +91 8982476890</li>
-            <li>Email: <a href="mailto:support@boqmanager.app" className="hover:text-white">support@boqmanager.app</a></li>
-            <li>Location: Bangalore, India</li>
+            <li>Email: <a href="mailto:admin@dheeradiprojects.com" className="hover:text-white">admin@dheeradiprojects.com</a></li>
+            <li>Location: New Delhi, India</li>
           </ul>
           <div className="mt-4 flex space-x-4">
             <a href="#" aria-label="Facebook" className="hover:text-white"><Facebook size={20} /></a>
